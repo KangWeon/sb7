@@ -26,7 +26,7 @@ find_package(OpenGL)
 set (CMAKE_DEBUG_POSTFIX "_d")
 
 if(WIN32)
-set(COMMON_LIBS sb7 optimized glfw3 debug glfw3_d ${GLFW_LIBRARIES} ${OPENGL_LIBRARIES})
+set(COMMON_LIBS sb7 optimized glfw debug glfw ${GLFW_LIBRARIES} ${OPENGL_LIBRARIES})
 elseif(LINUX)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLFW REQUIRED glfw)
