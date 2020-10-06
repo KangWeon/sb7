@@ -27,6 +27,8 @@
 #include <glm/ext.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+//#include "vmath.h"
+
 class basicfbo_app : public sb7::application
 {
     void init()
@@ -261,17 +263,37 @@ class basicfbo_app : public sb7::application
         static const GLfloat blue[] = { 0.0f, 0.0f, 0.3f, 1.0f };
         static const GLfloat one = 1.0f;
 
-        glm::mat4 proj_matrix = glm::perspective(50.0f,
+        glm::mat4 proj_matrix = glm::perspective(glm::radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      1000.0f);
+//        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+//                                                     (float)info.windowWidth / (float)info.windowHeight,
+//                                                     0.1f,
+//                                                     1000.0f);
 
         float f = (float)currentTime * 0.3f;
-        glm::mat4 mv_matrix =
-                                 
-          glm::rotate(glm::rotate(glm::translate(glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.0f, 0.0f, -4.0f)), glm::vec3(sinf(2.1f * f) * 0.5f,
-                                                                                                                                      cosf(1.7f * f) * 0.5f,
-                                                                                                                                      sinf(1.3f * f) * cosf(1.5f * f) * 2.0f)), f / 5.0f * 45.0f, glm::vec3(0.0f, 1.0f, 0.0f)), f / 8.0f * 81.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+        
+//        vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -4.0f) *
+//                                        vmath::translate(sinf(2.1f * f) * 0.5f,
+//                                                            cosf(1.7f * f) * 0.5f,
+//                                                            sinf(1.3f * f) * cosf(1.5f * f) * 2.0f) *
+//                                        vmath::rotate((float)currentTime * 45.0f, 0.0f, 1.0f, 0.0f) *
+//                                        vmath::rotate((float)currentTime * 81.0f, 1.0f, 0.0f, 0.0f);
+        glm::mat4 mv_matrix = glm::identity<glm::mat4>();
+        glm::mat4 translate1 = glm::translate(mv_matrix, glm::vec3(0.0f, 0.0f, -4.0f));
+        glm::mat4 translate2 = glm::translate(translate1, glm::vec3(sinf(2.1f * f)*0.5f, cosf(1.7f * f) * 0.5f, sinf(1.3f * f) * cosf(1.5f * f)));
+        glm::mat4 rotate1 = glm::rotate(translate2, (float)currentTime * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 rotate2 = glm::rotate(rotate1, (float)currentTime * glm::radians(81.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        mv_matrix = rotate2;
+//
+//        mv_matrix = translate1 * translate2 * rotate1 * rotate2;
+//
+        
+
+//          glm::rotate(glm::rotate(glm::translate(glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.0f, 0.0f, -4.0f)), glm::vec3(sinf(2.1f * f) * 0.5f,
+//                                                                                                                                      cosf(1.7f * f) * 0.5f,
+//                                                                                                                                      sinf(1.3f * f) * cosf(1.5f * f) * 2.0f)), f / 5.0f * 45.0f, glm::vec3(0.0f, 1.0f, 0.0f)), f / 8.0f * 81.0f, glm::vec3(1.0f, 0.0f, 0.0f));
 
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -281,6 +303,8 @@ class basicfbo_app : public sb7::application
 
         glUseProgram(program1);
 
+//        glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+//        glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
         glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
         glUniformMatrix4fv(mv_location, 1, GL_FALSE, glm::value_ptr(mv_matrix));
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -295,6 +319,9 @@ class basicfbo_app : public sb7::application
 
         glUseProgram(program2);
 
+//        glUniformMatrix4fv(proj_location2, 1, GL_FALSE, proj_matrix);
+//        glUniformMatrix4fv(mv_location2, 1, GL_FALSE, mv_matrix);
+        
         glUniformMatrix4fv(proj_location2, 1, GL_FALSE, glm::value_ptr(proj_matrix));
         glUniformMatrix4fv(mv_location2, 1, GL_FALSE, glm::value_ptr(mv_matrix));
 
