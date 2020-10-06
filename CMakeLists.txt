@@ -27,7 +27,7 @@ set (CMAKE_DEBUG_POSTFIX "_d")
 
 if(WIN32)
 set(COMMON_LIBS sb7 optimized glfw3 debug glfw3_d ${GLFW_LIBRARIES} ${OPENGL_LIBRARIES})
-elif(LINUX)
+elseif(LINUX)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLFW REQUIRED glfw)
 set(COMMON_LIBS sb7 glfw X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL rt dl)
