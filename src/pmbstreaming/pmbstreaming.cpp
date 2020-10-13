@@ -25,11 +25,30 @@
 #include <shader.h>
 #include <object.h>
 
-
 #include <sb7textoverlay.h>
 #include <sb7ktx.h>
 
 #include <math.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+//using glm::lookAt;
+//using glm::frustum;
+
+//using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class pmbstreaming_app : public sb7::application
 {
@@ -55,7 +74,7 @@ protected:
     enum
     {
         CHUNK_COUNT     = 4,
-        CHUNK_SIZE      = 3 * sizeof(vmath::mat4),
+        CHUNK_SIZE      = 3 * sizeof( mat4),
         BUFFER_SIZE     = (CHUNK_SIZE * CHUNK_COUNT)
     };
 
@@ -70,8 +89,8 @@ protected:
 
     struct MATRICES
     {
-        vmath::mat4     modelview;
-        vmath::mat4     projection;
+         mat4     modelview;
+         mat4     projection;
     };
 
     sb7::object         object;
@@ -142,11 +161,11 @@ void pmbstreaming_app::render(double currentTime)
     static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
     static const GLfloat one[] = { 1.0f };
 
-    vmath::mat4 proj_matrix = vmath::perspective(60.0f, (float)info.windowWidth / (float)info.windowHeight, 0.1f, 1800.0f);
-    vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -3.0f) *
-                            vmath::rotate((float)currentTime * 43.75f, 0.0f, 1.0f, 0.0f) *
-                            vmath::rotate((float)currentTime * 17.75f, 0.0f, 0.0f, 1.0f) *
-                            vmath::rotate((float)currentTime * 35.3f, 1.0f, 0.0f, 0.0f);
+     mat4 proj_matrix =  perspective(radians(60.0f), (float)info.windowWidth / (float)info.windowHeight, 0.1f, 1800.0f);
+     mat4 mv_matrix =  translate(vec3(0.0f, 0.0f, -3.0f)) *
+                             rotate(radians((float)currentTime * 43.75f), vec3(0.0f, 1.0f, 0.0f)) *
+                             rotate(radians((float)currentTime * 17.75f), vec3(0.0f, 0.0f, 1.0f))*
+                             rotate(radians((float)currentTime * 35.3f), vec3(1.0f, 0.0f, 0.0f));
 
     glViewport(0, 0, info.windowWidth, info.windowHeight);
     glClearBufferfv(GL_COLOR, 0, black);
