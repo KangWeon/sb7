@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,11 +22,30 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <object.h>
 #include <sb7ktx.h>
 #include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+//using glm::identity;
+//using glm::translate;
+//using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class raytracer_app : public sb7::application
 {
@@ -73,9 +92,9 @@ protected:
 
     struct uniforms_block
     {
-        vmath::mat4     mv_matrix;
-        vmath::mat4     view_matrix;
-        vmath::mat4     proj_matrix;
+        mat4     mv_matrix;
+        mat4     view_matrix;
+        mat4     proj_matrix;
     };
 
     GLuint          uniforms_buffer;
@@ -94,21 +113,21 @@ protected:
 
     struct sphere
     {
-        vmath::vec3     center;
+        vec3     center;
         float           radius;
         // unsigned int    : 32; // pad
-        vmath::vec4     color;
+        vec4     color;
     };
 
     struct plane
     {
-        vmath::vec3     normal;
+        vec3     normal;
         float           d;
     };
 
     struct light
     {
-        vmath::vec3     position;
+        vec3     position;
         unsigned int    : 32;       // pad
     };
 
@@ -234,11 +253,11 @@ void raytracer_app::render(double currentTime)
 
     float f = (float)total_time;
 
-    vmath::vec3 view_position = vmath::vec3(sinf(f * 0.3234f) * 28.0f, cosf(f * 0.4234f) * 28.0f, cosf(f * 0.1234f) * 28.0f); // sinf(f * 0.2341f) * 20.0f - 8.0f);
-    vmath::vec3 lookat_point = vmath::vec3(sinf(f * 0.214f) * 8.0f, cosf(f * 0.153f) * 8.0f, sinf(f * 0.734f) * 8.0f);
-    vmath::mat4 view_matrix = vmath::lookat(view_position,
+    vec3 view_position = vec3(sinf(f * 0.3234f) * 28.0f, cosf(f * 0.4234f) * 28.0f, cosf(f * 0.1234f) * 28.0f); // sinf(f * 0.2341f) * 20.0f - 8.0f);
+    vec3 lookat_point = vec3(sinf(f * 0.214f) * 8.0f, cosf(f * 0.153f) * 8.0f, sinf(f * 0.734f) * 8.0f);
+    mat4 view_matrix = lookAt(view_position,
                                             lookat_point,
-                                            vmath::vec3(0.0f, 1.0f, 0.0f));
+                                            vec3(0.0f, 1.0f, 0.0f));
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniforms_buffer);
     uniforms_block * block = (uniforms_block *)glMapBufferRange(GL_UNIFORM_BUFFER,
@@ -246,13 +265,13 @@ void raytracer_app::render(double currentTime)
                                                                 sizeof(uniforms_block),
                                                                 GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
-    vmath::mat4 model_matrix = vmath::scale(7.0f);
+    mat4 model_matrix = scale(vec3(7.0f));
 
     // f = 0.0f;
 
     block->mv_matrix = view_matrix * model_matrix;
     block->view_matrix = view_matrix;
-    block->proj_matrix = vmath::perspective(50.0f,
+    block->proj_matrix = perspective(radians(50.0f),
                                             (float)info.windowWidth / (float)info.windowHeight,
                                             0.1f,
                                             1000.0f);
@@ -268,7 +287,7 @@ void raytracer_app::render(double currentTime)
     {
         // float f = 0.0f;
         float fi = (float)i / 128.0f;
-        s[i].center = vmath::vec3(sinf(fi * 123.0f + f) * 15.75f, cosf(fi * 456.0f + f) * 15.75f, (sinf(fi * 300.0f + f) * cosf(fi * 200.0f + f)) * 20.0f);
+        s[i].center = vec3(sinf(fi * 123.0f + f) * 15.75f, cosf(fi * 456.0f + f) * 15.75f, (sinf(fi * 300.0f + f) * cosf(fi * 200.0f + f)) * 20.0f);
         s[i].radius = fi * 2.3f + 3.5f;
         float r = fi * 61.0f;
         float g = r + 0.25f;
@@ -276,7 +295,7 @@ void raytracer_app::render(double currentTime)
         r = (r - floorf(r)) * 0.8f + 0.2f;
         g = (g - floorf(g)) * 0.8f + 0.2f;
         b = (b - floorf(b)) * 0.8f + 0.2f;
-        s[i].color = vmath::vec4(r, g, b, 1.0f);
+        s[i].color = vec4(r, g, b, 1.0f);
     }
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);
@@ -286,22 +305,22 @@ void raytracer_app::render(double currentTime)
 
     //for (i = 0; i < 1; i++)
     {
-        p[0].normal = vmath::vec3(0.0f, 0.0f, -1.0f);
+        p[0].normal = vec3(0.0f, 0.0f, -1.0f);
         p[0].d = 30.0f;
 
-        p[1].normal = vmath::vec3(0.0f, 0.0f, 1.0f);
+        p[1].normal = vec3(0.0f, 0.0f, 1.0f);
         p[1].d = 30.0f;
 
-        p[2].normal = vmath::vec3(-1.0f, 0.0f, 0.0f);
+        p[2].normal = vec3(-1.0f, 0.0f, 0.0f);
         p[2].d = 30.0f;
 
-        p[3].normal = vmath::vec3(1.0f, 0.0f, 0.0f);
+        p[3].normal = vec3(1.0f, 0.0f, 0.0f);
         p[3].d = 30.0f;
 
-        p[4].normal = vmath::vec3(0.0f, -1.0f, 0.0f);
+        p[4].normal = vec3(0.0f, -1.0f, 0.0f);
         p[4].d = 30.0f;
 
-        p[5].normal = vmath::vec3(0.0f, 1.0f, 0.0f);
+        p[5].normal = vec3(0.0f, 1.0f, 0.0f);
         p[5].d = 30.0f;
     }
 
@@ -315,7 +334,7 @@ void raytracer_app::render(double currentTime)
     for (i = 0; i < 128; i++)
     {
         float fi = 3.33f - (float)i; //  / 35.0f;
-        l[i].position = vmath::vec3(sinf(fi * 2.0f - f) * 15.75f,
+        l[i].position = vec3(sinf(fi * 2.0f - f) * 15.75f,
                                     cosf(fi * 5.0f - f) * 5.75f,
                                     (sinf(fi * 3.0f - f) * cosf(fi * 2.5f - f)) * 19.4f);
     }
@@ -326,8 +345,8 @@ void raytracer_app::render(double currentTime)
     glViewport(0, 0, info.windowWidth, info.windowHeight);
 
     glUseProgram(prepare_program);
-    glUniformMatrix4fv(uniforms.ray_lookat, 1, GL_FALSE, view_matrix);
-    glUniform3fv(uniforms.ray_origin, 1, view_position);
+    glUniformMatrix4fv(uniforms.ray_lookat, 1, GL_FALSE, value_ptr(view_matrix));
+    glUniform3fv(uniforms.ray_origin, 1, value_ptr(view_position));
     glUniform1f(uniforms.aspect, (float)info.windowHeight / (float)info.windowWidth);
     glBindFramebuffer(GL_FRAMEBUFFER, ray_fbo[0]);
     static const GLenum draw_buffers[] =

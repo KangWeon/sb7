@@ -1,13 +1,13 @@
-"#version 420 core                                                  \n"
-"                                                                   \n"
-"out vec4 color;                                                    \n"
-"                                                                   \n"
-"in GS_OUT                                                          \n"
-"{                                                                  \n"
-"    vec4 color;                                                    \n"
-"} fs_in;                                                           \n"
-"                                                                   \n"
-"void main(void)                                                    \n"
-"{                                                                  \n"
-"    color = fs_in.color;                                           \n"
-"}                                                                  \n"
+#version 420 core                                                 
+                                                                
+out vec4 color;                                                   
+                                                                
+in GS_OUT                                                         
+{                                                                 
+    vec4 color;                                                   
+} fs_in;                                                          
+                                                                
+void main(void)                                                   
+{                                                                 
+    color = fs_in.color;                                          
+}                                                                 

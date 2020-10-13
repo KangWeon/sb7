@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,14 +22,34 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <object.h>
 #include <sb7ktx.h>
 #include <shader.h>
 #include <sb7textoverlay.h>
 
-#define FBO_SIZE                2048
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
+
+#define FBO_SIZE                        2048
 #define FRUSTUM_DEPTH           1000
 
 class dof_app : public sb7::application
@@ -91,12 +111,12 @@ protected:
     struct
     {
         sb7::object     obj;
-        vmath::mat4     model_matrix;
-        vmath::vec4     diffuse_albedo;
+        mat4     model_matrix;
+        vec4     diffuse_albedo;
     } objects[OBJECT_COUNT];
 
-    vmath::mat4     camera_view_matrix;
-    vmath::mat4     camera_proj_matrix;
+    mat4     camera_view_matrix;
+    mat4     camera_proj_matrix;
 
     GLuint          quad_vao;
 
@@ -123,13 +143,13 @@ void dof_app::startup()
         "media/objects/cube.sbm",
     };
 
-    static const vmath::vec4 object_colors[] =
+    static const vec4 object_colors[] =
     {
-        vmath::vec4(1.0f, 0.7f, 0.8f, 1.0f),
-        vmath::vec4(0.7f, 0.8f, 1.0f, 1.0f),
-        vmath::vec4(0.3f, 0.9f, 0.4f, 1.0f),
-        vmath::vec4(0.6f, 0.4f, 0.9f, 1.0f),
-        vmath::vec4(0.8f, 0.2f, 0.1f, 1.0f),
+        vec4(1.0f, 0.7f, 0.8f, 1.0f),
+        vec4(0.7f, 0.8f, 1.0f, 1.0f),
+        vec4(0.3f, 0.9f, 0.4f, 1.0f),
+        vec4(0.6f, 0.4f, 0.9f, 1.0f),
+        vec4(0.8f, 0.2f, 0.1f, 1.0f),
     };
 
     for (i = 0; i < OBJECT_COUNT; i++)
@@ -188,41 +208,43 @@ void dof_app::render(double currentTime)
 
     const float f = (float)total_time + 30.0f;
 
-    vmath::vec3 view_position = vmath::vec3(0.0f, 0.0f, 40.0f);
+    vec3 view_position = vec3(0.0f, 0.0f, 40.0f);
 
-    camera_proj_matrix = vmath::perspective(50.0f,
+    camera_proj_matrix = perspective(radians(50.0f),
                                             (float)info.windowWidth / (float)info.windowHeight,
                                             2.0f,
                                             300.0f);
 
-    camera_view_matrix = vmath::lookat(view_position,
-                                       vmath::vec3(0.0f),
-                                       vmath::vec3(0.0f, 1.0f, 0.0f));
+    camera_view_matrix = lookAt(view_position,
+                                       vec3(0.0f),
+                                       vec3(0.0f, 1.0f, 0.0f));
+    
+    
 
-    objects[0].model_matrix = vmath::translate(5.0f, 0.0f, 20.0f) *
-                              vmath::rotate(f * 14.5f, 0.0f, 1.0f, 0.0f) *
-                              vmath::rotate(20.0f, 1.0f, 0.0f, 0.0f) *
-                              vmath::translate(0.0f, -4.0f, 0.0f);
+    objects[0].model_matrix = translate(vec3(5.0f, 0.0f, 20.0f)) *
+                              rotate(radians(f * 14.5f), vec3(0.0f, 1.0f, 0.0f)) *
+                              rotate(radians(20.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                              translate(vec3(0.0f, -4.0f, 0.0f));
 
-    objects[1].model_matrix = vmath::translate(-5.0f, 0.0f, 0.0f) *
-                              vmath::rotate(f * 14.5f, 0.0f, 1.0f, 0.0f) *
-                              vmath::rotate(20.0f, 1.0f, 0.0f, 0.0f) *
-                              vmath::translate(0.0f, -4.0f, 0.0f);
+    objects[1].model_matrix = translate(vec3(-5.0f, 0.0f, 0.0f)) *
+                              rotate(radians(f * 14.5f), vec3(0.0f, 1.0f, 0.0f)) *
+                              rotate(radians(20.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                              translate(vec3(0.0f, -4.0f, 0.0f));
 
-    objects[2].model_matrix = vmath::translate(-15.0f, 0.0f, -20.0f) *
-                              vmath::rotate(f * 14.5f, 0.0f, 1.0f, 0.0f) *
-                              vmath::rotate(20.0f, 1.0f, 0.0f, 0.0f) *
-                              vmath::translate(0.0f, -4.0f, 0.0f);
+    objects[2].model_matrix = translate(vec3(-15.0f, 0.0f, -20.0f)) *
+                              rotate(radians(f * 14.5f), vec3(0.0f, 1.0f, 0.0f)) *
+                              rotate(radians(20.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                              translate(vec3(0.0f, -4.0f, 0.0f));
 
-    objects[3].model_matrix = vmath::translate(-25.0f, 0.0f, -40.0f) *
-                              vmath::rotate(f * 14.5f, 0.0f, 1.0f, 0.0f) *
-                              vmath::rotate(20.0f, 1.0f, 0.0f, 0.0f) *
-                              vmath::translate(0.0f, -4.0f, 0.0f);
+    objects[3].model_matrix = translate(vec3(-25.0f, 0.0f, -40.0f)) *
+                              rotate(radians(f * 14.5f), vec3(0.0f, 1.0f, 0.0f)) *
+                              rotate(radians(20.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                              translate(vec3(0.0f, -4.0f, 0.0f));
 
-    objects[4].model_matrix = vmath::translate(-35.0f, 0.0f, -60.0f) *
-                              vmath::rotate(f * 14.5f, 0.0f, 1.0f, 0.0f) *
-                              vmath::rotate(20.0f, 1.0f, 0.0f, 0.0f) *
-                              vmath::translate(0.0f, -4.0f, 0.0f);
+    objects[4].model_matrix = translate(vec3(-35.0f, 0.0f, -60.0f)) *
+                              rotate(radians(f * 14.5f), vec3(0.0f, 1.0f, 0.0f)) *
+                              rotate(radians(20.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                              translate(vec3(0.0f, -4.0f, 0.0f));
 
     glEnable(GL_DEPTH_TEST);
     render_scene(total_time);
@@ -261,10 +283,10 @@ void dof_app::render_scene(double currentTime)
     static const GLfloat zero[] = { 0.0f };
     static const GLfloat gray[] = { 0.1f, 0.1f, 0.1f, 0.0f };
     static const GLenum attachments[] = { GL_COLOR_ATTACHMENT0 };
-    static const vmath::mat4 scale_bias_matrix = vmath::mat4(vmath::vec4(0.5f, 0.0f, 0.0f, 0.0f),
-                                                             vmath::vec4(0.0f, 0.5f, 0.0f, 0.0f),
-                                                             vmath::vec4(0.0f, 0.0f, 0.5f, 0.0f),
-                                                             vmath::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+    static const mat4 scale_bias_matrix = mat4(vec4(0.5f, 0.0f, 0.0f, 0.0f),
+                                                             vec4(0.0f, 0.5f, 0.0f, 0.0f),
+                                                             vec4(0.0f, 0.0f, 0.5f, 0.0f),
+                                                             vec4(0.5f, 0.5f, 0.5f, 1.0f));
 
     glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
 
@@ -273,16 +295,16 @@ void dof_app::render_scene(double currentTime)
     glClearBufferfv(GL_COLOR, 0, gray);
     glClearBufferfv(GL_DEPTH, 0, ones);
     glUseProgram(view_program);
-    glUniformMatrix4fv(uniforms.view.proj_matrix, 1, GL_FALSE, camera_proj_matrix);
+    glUniformMatrix4fv(uniforms.view.proj_matrix, 1, GL_FALSE, value_ptr(camera_proj_matrix));
 
     glClearBufferfv(GL_DEPTH, 0, ones);
 
     int i;
     for (i = 0; i < OBJECT_COUNT; i++)
     {
-        vmath::mat4& model_matrix = objects[i].model_matrix;
-        glUniformMatrix4fv(uniforms.view.mv_matrix, 1, GL_FALSE, camera_view_matrix * objects[i].model_matrix);
-        glUniform3fv(uniforms.view.diffuse_albedo, 1, objects[i].diffuse_albedo);
+        mat4& model_matrix = objects[i].model_matrix;
+        glUniformMatrix4fv(uniforms.view.mv_matrix, 1, GL_FALSE, value_ptr(camera_view_matrix * objects[i].model_matrix));
+        glUniform3fv(uniforms.view.diffuse_albedo, 1, value_ptr(objects[i].diffuse_albedo));
         objects[0].obj.render();
     }
 

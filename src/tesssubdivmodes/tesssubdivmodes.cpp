@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright ï¿½ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,6 +24,8 @@
 #include <sb7.h>
 #include <cmath>
 
+#include <shader.h>
+
 class tesssubdivmodes_app : public sb7::application
 {
 public:
@@ -44,136 +46,47 @@ public:
 
     virtual void startup()
     {
-        static const char * vs_source[] =
-        {
-            "#version 420 core                                                 \n"
-            "                                                                  \n"
-            "void main(void)                                                   \n"
-            "{                                                                 \n"
-            "    const vec4 vertices[] = vec4[](vec4( 0.8, -0.8, 0.5, 1.0),    \n"
-            "                                   vec4(-0.8, -0.8, 0.5, 1.0),    \n"
-            "                                   vec4( 0.8,  0.8, 0.5, 1.0),    \n"
-            "                                   vec4(-0.8,  0.8, 0.5, 1.0));   \n"
-            "                                                                  \n"
-            "    gl_Position = vertices[gl_VertexID];                          \n"
-            "}                                                                 \n"
-        };
 
-        static const char * tcs_source_triangles[] =
-        {
-            "#version 420 core                                                                 \n"
-            "                                                                                  \n"
-            "layout (vertices = 3) out;                                                        \n"
-            "                                                                                  \n"
-            "uniform float tess_level = 2.7;                                                   \n"
-            "                                                                                  \n"
-            "void main(void)                                                                   \n"
-            "{                                                                                 \n"
-            "    if (gl_InvocationID == 0)                                                     \n"
-            "    {                                                                             \n"
-            "        gl_TessLevelInner[0] = tess_level;                                        \n"
-            "        gl_TessLevelOuter[0] = tess_level;                                        \n"
-            "        gl_TessLevelOuter[1] = tess_level;                                        \n"
-            "        gl_TessLevelOuter[2] = tess_level;                                        \n"
-            "    }                                                                             \n"
-            "    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;     \n"
-            "}                                                                                 \n"
-        };
-
-        static const char * tes_source_equal[] =
-        {
-            "#version 420 core                                                                 \n"
-            "                                                                                  \n"
-            "layout (triangles) in;                                                            \n"
-            "                                                                                  \n"
-            "void main(void)                                                                   \n"
-            "{                                                                                 \n"
-            "    gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position) +                       \n"
-            "                  (gl_TessCoord.y * gl_in[1].gl_Position) +                       \n"
-            "                  (gl_TessCoord.z * gl_in[2].gl_Position);                        \n"
-            "}                                                                                 \n"
-        };
-
-        static const char * tes_source_fract_even[] =
-        {
-            "#version 420 core                                                                 \n"
-            "                                                                                  \n"
-            "layout (triangles, fractional_even_spacing) in;                                   \n"
-            "                                                                                  \n"
-            "void main(void)                                                                   \n"
-            "{                                                                                 \n"
-            "    gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position) +                       \n"
-            "                  (gl_TessCoord.y * gl_in[1].gl_Position) +                       \n"
-            "                  (gl_TessCoord.z * gl_in[2].gl_Position);                        \n"
-            "}                                                                                 \n"
-        };
-
-        static const char * tes_source_fract_odd[] =
-        {
-            "#version 420 core                                                                 \n"
-            "                                                                                  \n"
-            "layout (triangles, fractional_odd_spacing) in;                                    \n"
-            "                                                                                  \n"
-            "void main(void)                                                                   \n"
-            "{                                                                                 \n"
-            "    gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position) +                       \n"
-            "                  (gl_TessCoord.y * gl_in[1].gl_Position) +                       \n"
-            "                  (gl_TessCoord.z * gl_in[2].gl_Position);                        \n"
-            "}                                                                                 \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "out vec4 color;                                                    \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    color = vec4(1.0);                                             \n"
-            "}                                                                  \n"
-        };
+        GLuint vs = sb7::shader::load("media/shaders/tesssubdivmodes/tesssubdivmodes.vs.glsl", GL_VERTEX_SHADER);
+        GLuint tcs_tri = sb7::shader::load("media/shaders/tesssubdivmodes/tesssubdivmodes_triangles.tcs.glsl", GL_TESS_CONTROL_SHADER);
+        GLuint tes_equal = sb7::shader::load("media/shaders/tesssubdivmodes/tesssubdivmodes_equal.tes.glsl", GL_TESS_EVALUATION_SHADER);
+        GLuint tes_fract_even = sb7::shader::load("media/shaders/tesssubdivmodes/tesssubdivmodes_fract_even.tes.glsl", GL_TESS_EVALUATION_SHADER);
+        GLuint tes_fract_odd = sb7::shader::load("media/shaders/tesssubdivmodes/tesssubdivmodes_fract_odd.tes.glsl", GL_TESS_EVALUATION_SHADER);
+        GLuint fs = sb7::shader::load("media/shaders/tesssubdivmodes/tesssubdivmodes.fs.glsl", GL_FRAGMENT_SHADER);
 
         int i;
 
-        static const char * const * vs_sources[] =
+        static GLuint vs_handles[] =
         {
-            vs_source, vs_source, vs_source
+            vs, vs, vs
         };
 
-        static const char * const * tcs_sources[] =
+        static GLuint tcs_handles[] =
         {
-            tcs_source_triangles, tcs_source_triangles, tcs_source_triangles
+            tcs_tri, tcs_tri, tcs_tri
         };
 
-        static const char * const * tes_sources[] =
+        static GLuint tes_handles[] =
         {
-            tes_source_equal, tes_source_fract_even, tes_source_fract_odd
+            tes_equal, tes_fract_even, tes_fract_odd
         };
 
-        static const char * const * fs_sources[] =
+        static GLuint fs_handles[] =
         {
-            fs_source, fs_source, fs_source
+            fs, fs, fs
         };
 
         for (i = 0; i < 3; i++)
         {
             program[i] = glCreateProgram();
-            GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(vs, 1, vs_sources[i], NULL);
-            glCompileShader(vs);
+            
+            GLuint vs = vs_handles[i];
 
-            GLuint tcs = glCreateShader(GL_TESS_CONTROL_SHADER);
-            glShaderSource(tcs, 1, tcs_sources[i], NULL);
-            glCompileShader(tcs);
+            GLuint tcs = tcs_handles[i];
 
-            GLuint tes = glCreateShader(GL_TESS_EVALUATION_SHADER);
-            glShaderSource(tes, 1, tes_sources[i], NULL);
-            glCompileShader(tes);
+            GLuint tes = tes_handles[i];
 
-            GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(fs, 1, fs_sources[i], NULL);
-            glCompileShader(fs);
+            GLuint fs = fs_handles[i];
 
             glAttachShader(program[i], vs);
             glAttachShader(program[i], tcs);

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,7 +24,26 @@
 #include <sb7.h>
 #include <shader.h>
 #include <object.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+//using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 enum
 {
@@ -182,10 +201,10 @@ void multidrawindirect_app::render(double currentTime)
     glClearBufferfv(GL_COLOR, 0, black);
     glClearBufferfv(GL_DEPTH, 0, &one);
 
-    const vmath::mat4 view_matrix = vmath::lookat(vmath::vec3(100.0f * cosf(t * 0.023f), 100.0f * cosf(t * 0.023f), 300.0f * sinf(t * 0.037f) - 600.0f),
-                                                  vmath::vec3(0.0f, 0.0f, 260.0f),
-                                                  vmath::normalize(vmath::vec3(0.1f - cosf(t * 0.1f) * 0.3f, 1.0f, 0.0f)));
-    const vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+    const  mat4 view_matrix =  lookAt( vec3(100.0f * cosf(t * 0.023f), 100.0f * cosf(t * 0.023f), 300.0f * sinf(t * 0.037f) - 600.0f),
+                                                   vec3(0.0f, 0.0f, 260.0f),
+                                                   normalize( vec3(0.1f - cosf(t * 0.1f) * 0.3f, 1.0f, 0.0f)));
+    const  mat4 proj_matrix =  perspective(radians(50.0f),
                                                        (float)info.windowWidth / (float)info.windowHeight,
                                                        1.0f,
                                                        2000.0f);
@@ -193,9 +212,9 @@ void multidrawindirect_app::render(double currentTime)
     glUseProgram(render_program);
 
     glUniform1f(uniforms.time, t);
-    glUniformMatrix4fv(uniforms.view_matrix, 1, GL_FALSE, view_matrix);
-    glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, proj_matrix);
-    glUniformMatrix4fv(uniforms.viewproj_matrix, 1, GL_FALSE, proj_matrix * view_matrix);
+    glUniformMatrix4fv(uniforms.view_matrix, 1, GL_FALSE, value_ptr(view_matrix));
+    glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, value_ptr(proj_matrix));
+    glUniformMatrix4fv(uniforms.viewproj_matrix, 1, GL_FALSE, value_ptr(proj_matrix * view_matrix));
 
     glBindVertexArray(object.get_vao());
 

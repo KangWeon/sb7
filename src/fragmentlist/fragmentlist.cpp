@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,11 +22,32 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <object.h>
 #include <sb7ktx.h>
+
 #include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
 
 class fragmentlist_app : public sb7::application
 {
@@ -58,9 +79,9 @@ protected:
 
     struct uniforms_block
     {
-        vmath::mat4     mv_matrix;
-        vmath::mat4     view_matrix;
-        vmath::mat4     proj_matrix;
+        mat4     mv_matrix;
+        mat4     view_matrix;
+        mat4     proj_matrix;
     };
 
     GLuint          uniforms_buffer;
@@ -130,19 +151,19 @@ void fragmentlist_app::render(double currentTime)
 
     glUseProgram(append_program);
 
-    vmath::mat4 model_matrix = vmath::scale(7.0f);
-    vmath::vec3 view_position = vmath::vec3(cosf(f * 0.35f) * 120.0f, cosf(f * 0.4f) * 30.0f, sinf(f * 0.35f) * 120.0f);
-    vmath::mat4 view_matrix = vmath::lookat(view_position,
-                                            vmath::vec3(0.0f, 30.0f, 0.0f),
-                                            vmath::vec3(0.0f, 1.0f, 0.0f));
+    mat4 model_matrix = scale(vec3(7.0f));
+    vec3 view_position = vec3(cosf(f * 0.35f) * 120.0f, cosf(f * 0.4f) * 30.0f, sinf(f * 0.35f) * 120.0f);
+    mat4 view_matrix = lookAt(view_position,
+                                            vec3(0.0f, 30.0f, 0.0f),
+                                            vec3(0.0f, 1.0f, 0.0f));
 
-    vmath::mat4 mv_matrix = view_matrix * model_matrix;
-    vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+    mat4 mv_matrix = view_matrix * model_matrix;
+    mat4 proj_matrix = perspective(radians(50.0f),
                                                  (float)info.windowWidth / (float)info.windowHeight,
                                                  0.1f,
                                                  1000.0f);
 
-    glUniformMatrix4fv(uniforms.mvp, 1, GL_FALSE, proj_matrix * mv_matrix);
+    glUniformMatrix4fv(uniforms.mvp, 1, GL_FALSE, value_ptr(proj_matrix * mv_matrix));
 
     static const unsigned int zero = 0;
     glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_counter_buffer);

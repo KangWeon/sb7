@@ -1,5 +1,5 @@
 /*
-* Copyright © 2012-2015 Graham Sellers
+* Copyrightâ„¢ 2012-2015 Graham Sellers
 *
 * Permission is hereby granted, free of charge, to any person obtaining a
 * copy of this software and associated documentation files (the "Software"),
@@ -26,6 +26,9 @@
 #include <sb7ktx.h>
 #include <sb7color.h>
 #include <sb7textoverlay.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #define TEXTURE_WIDTH 512
 #define TEXTURE_HEIGHT 512
@@ -80,7 +83,7 @@ void mirrorclamp_app::startup()
 {
     overlay.init(80, 50);
 
-    input_texture = sb7::ktx::file::load("media/textures/flare.ktx");
+    input_texture = sb7::ktx::file::load("media/textures/floor.ktx");
 
     load_shaders();
 
@@ -91,7 +94,7 @@ void mirrorclamp_app::render(double T)
 {
     glViewport(0, 0, info.windowWidth, info.windowHeight);
 
-    glClearBufferfv(GL_COLOR, 0, sb7::color::Black);
+    glClearBufferfv(GL_COLOR, 0, glm::value_ptr(sb7::color::Black));
 
     Sleep(1);
 

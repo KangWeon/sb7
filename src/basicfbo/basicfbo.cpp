@@ -1,5 +1,5 @@
 /*
- * Copyright � 2012-2015 Graham Sellers
+ * Copyright™ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -27,7 +27,22 @@
 #include <glm/ext.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-//#include "vmath.h"
+#include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class basicfbo_app : public sb7::application
 {
@@ -42,101 +57,29 @@ class basicfbo_app : public sb7::application
 
     virtual void startup()
     {
-        static const char * vs_source[] =
-        {
-            "#version 410 core                                                  \n"
-            "                                                                   \n"
-            "layout (location = 0) in vec4 position;                            \n"
-            "layout (location = 1) in vec2 texcoord;                            \n"
-            "                                                                   \n"
-            "out VS_OUT                                                         \n"
-            "{                                                                  \n"
-            "    vec4 color;                                                    \n"
-            "    vec2 texcoord;                                                 \n"
-            "} vs_out;                                                          \n"
-            "                                                                   \n"
-            "uniform mat4 mv_matrix;                                            \n"
-            "uniform mat4 proj_matrix;                                          \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    gl_Position = proj_matrix * mv_matrix * position;              \n"
-            "    vs_out.color = position * 2.0 + vec4(0.5, 0.5, 0.5, 0.0);      \n"
-            "    vs_out.texcoord = texcoord;                                    \n"
-            "}                                                                  \n"
-        };
+        GLuint vs, fs1, fs2;
 
-        static const char * fs_source1[] =
-        {
-            "#version 410 core                                                              \n"
-            "                                                                               \n"
-            "in VS_OUT                                                                      \n"
-            "{                                                                              \n"
-            "    vec4 color;                                                                \n"
-            "    vec2 texcoord;                                                             \n"
-            "} fs_in;                                                                       \n"
-            "                                                                               \n"
-            "out vec4 color;                                                                \n"
-            "                                                                               \n"
-            "void main(void)                                                                \n"
-            "{                                                                              \n"
-            "    color = sin(fs_in.color * vec4(40.0, 20.0, 30.0, 1.0)) * 0.5 + vec4(0.5);  \n"
-            "}                                                                              \n"
-        };
-
-        static const char * fs_source2[] =
-        {
-            "#version 420 core                                                              \n"
-            "                                                                               \n"
-            "uniform sampler2D tex;                                                         \n"
-            "                                                                               \n"
-            "out vec4 color;                                                                \n"
-            "                                                                               \n"
-            "in VS_OUT                                                                      \n"
-            "{                                                                              \n"
-            "    vec4 color;                                                                \n"
-            "    vec2 texcoord;                                                             \n"
-            "} fs_in;                                                                       \n"
-            "                                                                               \n"
-            "void main(void)                                                                \n"
-            "{                                                                              \n"
-            "    color = mix(fs_in.color, texture(tex, fs_in.texcoord), 0.7);               \n"
-            "}                                                                              \n"
-        };
+        vs = sb7::shader::load("media/shaders/basicfbo/basicfbo.vs.glsl", GL_VERTEX_SHADER);
+        fs1 = sb7::shader::load("media/shaders/basicfbo/basicfbo1.fs.glsl", GL_FRAGMENT_SHADER);
+        fs2 = sb7::shader::load("media/shaders/basicfbo/basicfbo2.fs.glsl", GL_FRAGMENT_SHADER);
 
         program1 = glCreateProgram();
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source1, NULL);
-        glCompileShader(fs);
-
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
         glAttachShader(program1, vs);
-        glAttachShader(program1, fs);
+        glAttachShader(program1, fs1);
 
         glLinkProgram(program1);
 
-        glDeleteShader(vs);
-        glDeleteShader(fs);
+        glDeleteShader(fs1);
 
         program2 = glCreateProgram();
-        fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source2, NULL);
-        glCompileShader(fs);
-
-        vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
+        
         glAttachShader(program2, vs);
-        glAttachShader(program2, fs);
+        glAttachShader(program2, fs2);
 
         glLinkProgram(program2);
 
         glDeleteShader(vs);
-        glDeleteShader(fs);
+        glDeleteShader(fs2);
 
         mv_location = glGetUniformLocation(program1, "mv_matrix");
         proj_location = glGetUniformLocation(program1, "proj_matrix");
@@ -263,50 +206,33 @@ class basicfbo_app : public sb7::application
         static const GLfloat blue[] = { 0.0f, 0.0f, 0.3f, 1.0f };
         static const GLfloat one = 1.0f;
 
-        glm::mat4 proj_matrix = glm::perspective(glm::radians(50.0f),
+        mat4 proj_matrix = perspective(radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      1000.0f);
-//        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
-//                                                     (float)info.windowWidth / (float)info.windowHeight,
-//                                                     0.1f,
-//                                                     1000.0f);
 
         float f = (float)currentTime * 0.3f;
         
-//        vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -4.0f) *
-//                                        vmath::translate(sinf(2.1f * f) * 0.5f,
-//                                                            cosf(1.7f * f) * 0.5f,
-//                                                            sinf(1.3f * f) * cosf(1.5f * f) * 2.0f) *
-//                                        vmath::rotate((float)currentTime * 45.0f, 0.0f, 1.0f, 0.0f) *
-//                                        vmath::rotate((float)currentTime * 81.0f, 1.0f, 0.0f, 0.0f);
-        glm::mat4 mv_matrix = glm::identity<glm::mat4>();
-        glm::mat4 translate1 = glm::translate(mv_matrix, glm::vec3(0.0f, 0.0f, -4.0f));
-        glm::mat4 translate2 = glm::translate(translate1, glm::vec3(sinf(2.1f * f)*0.5f, cosf(1.7f * f) * 0.5f, sinf(1.3f * f) * cosf(1.5f * f)));
-        glm::mat4 rotate1 = glm::rotate(translate2, (float)currentTime * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 rotate2 = glm::rotate(rotate1, (float)currentTime * glm::radians(81.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        mv_matrix = rotate2;
-//
-//        mv_matrix = translate1 * translate2 * rotate1 * rotate2;
-//
-        
 
-//          glm::rotate(glm::rotate(glm::translate(glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.0f, 0.0f, -4.0f)), glm::vec3(sinf(2.1f * f) * 0.5f,
-//                                                                                                                                      cosf(1.7f * f) * 0.5f,
-//                                                                                                                                      sinf(1.3f * f) * cosf(1.5f * f) * 2.0f)), f / 5.0f * 45.0f, glm::vec3(0.0f, 1.0f, 0.0f)), f / 8.0f * 81.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+        mat4 mv_matrix = identity<mat4>();
+        mat4 translate1 =translate(mv_matrix, vec3(0.0f, 0.0f, -4.0f));
+        mat4 translate2 = translate(translate1, vec3(sinf(2.1f * f)*0.5f, cosf(1.7f * f) * 0.5f, sinf(1.3f * f) * cosf(1.5f * f)));
+        mat4 rotate1 = rotate(translate2, (float)currentTime * radians(45.0f), vec3(0.0f, 1.0f, 0.0f));
+        mat4 rotate2 = rotate(rotate1, (float)currentTime * radians(81.0f), vec3(1.0f, 0.0f, 0.0f));
+        mv_matrix = rotate2;
 
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
         glViewport(0, 0, 512, 512);
-        glClearBufferfv(GL_COLOR, 0, glm::value_ptr(sb7::color::Green));
+        glClearBufferfv(GL_COLOR, 0, value_ptr(sb7::color::Green));
         glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
 
         glUseProgram(program1);
 
 //        glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
 //        glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
-        glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
-        glUniformMatrix4fv(mv_location, 1, GL_FALSE, glm::value_ptr(mv_matrix));
+        glUniformMatrix4fv(proj_location, 1, GL_FALSE, value_ptr(proj_matrix));
+        glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -322,8 +248,8 @@ class basicfbo_app : public sb7::application
 //        glUniformMatrix4fv(proj_location2, 1, GL_FALSE, proj_matrix);
 //        glUniformMatrix4fv(mv_location2, 1, GL_FALSE, mv_matrix);
         
-        glUniformMatrix4fv(proj_location2, 1, GL_FALSE, glm::value_ptr(proj_matrix));
-        glUniformMatrix4fv(mv_location2, 1, GL_FALSE, glm::value_ptr(mv_matrix));
+        glUniformMatrix4fv(proj_location2, 1, GL_FALSE, value_ptr(proj_matrix));
+        glUniformMatrix4fv(mv_location2, 1, GL_FALSE, value_ptr(mv_matrix));
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,10 +22,31 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+#include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 // Remove this to draw only a single cube!
-#define MANY_CUBES
+//#define MANY_CUBES
 
 class singlepoint_app : public sb7::application
 {
@@ -40,57 +61,19 @@ class singlepoint_app : public sb7::application
 
     virtual void startup()
     {
-        static const char * vs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "in vec4 position;                                                  \n"
-            "                                                                   \n"
-            "out VS_OUT                                                         \n"
-            "{                                                                  \n"
-            "    vec4 color;                                                    \n"
-            "} vs_out;                                                          \n"
-            "                                                                   \n"
-            "uniform mat4 mv_matrix;                                            \n"
-            "uniform mat4 proj_matrix;                                          \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    gl_Position = proj_matrix * mv_matrix * position;              \n"
-            "    vs_out.color = position * 2.0 + vec4(0.5, 0.5, 0.5, 0.0);      \n"
-            "}                                                                  \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "out vec4 color;                                                    \n"
-            "                                                                   \n"
-            "in VS_OUT                                                          \n"
-            "{                                                                  \n"
-            "    vec4 color;                                                    \n"
-            "} fs_in;                                                           \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    color = fs_in.color;                                           \n"
-            "}                                                                  \n"
-        };
-
+       
+        GLuint vs = sb7::shader::load("media/shaders/indexedcube/indexedcube.vs.glsl", GL_VERTEX_SHADER);
+        GLuint fs = sb7::shader::load("media/shaders/indexedcube/indexedcube.fs.glsl", GL_FRAGMENT_SHADER);
+        
         program = glCreateProgram();
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
+        
         glAttachShader(program, vs);
         glAttachShader(program, fs);
 
         glLinkProgram(program);
+        
+        glDeleteShader(vs);
+        glDeleteShader(fs);
 
         mv_location = glGetUniformLocation(program, "mv_matrix");
         proj_location = glGetUniformLocation(program, "proj_matrix");
@@ -161,34 +144,34 @@ class singlepoint_app : public sb7::application
 
         glUseProgram(program);
 
-        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+         mat4 proj_matrix =  perspective(radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      1000.0f);
-        glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+        glUniformMatrix4fv(proj_location, 1, GL_FALSE, value_ptr(proj_matrix));
 
 #ifdef MANY_CUBES
         for (i = 0; i < 24; i++)
         {
             float f = (float)i + (float)currentTime * 0.3f;
-            vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -20.0f) *
-                                    vmath::rotate((float)currentTime * 45.0f, 0.0f, 1.0f, 0.0f) *
-                                    vmath::rotate((float)currentTime * 21.0f, 1.0f, 0.0f, 0.0f) *
-                                    vmath::translate(sinf(2.1f * f) * 2.0f,
+             mat4 mv_matrix =  translate(vec3(0.0f, 0.0f, -20.0f)) *
+                                     rotate(radians((float)currentTime * 45.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                                     rotate(radians((float)currentTime * 21.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                                     translate(vec3(sinf(2.1f * f) * 2.0f,
                                                      cosf(1.7f * f) * 2.0f,
-                                                     sinf(1.3f * f) * cosf(1.5f * f) * 2.0f);
-            glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+                                                     sinf(1.3f * f) * cosf(1.5f * f) * 2.0f));
+            glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0);
         }
 #else
         float f = (float)currentTime * 0.3f;
-        vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -4.0f) *
-                                vmath::translate(sinf(2.1f * f) * 0.5f,
+         mat4 mv_matrix =  translate(vec3(0.0f, 0.0f, -4.0f)) *
+                                 translate(vec3(sinf(2.1f * f) * 0.5f,
                                                     cosf(1.7f * f) * 0.5f,
-                                                    sinf(1.3f * f) * cosf(1.5f * f) * 2.0f) *
-                                vmath::rotate((float)currentTime * 45.0f, 0.0f, 1.0f, 0.0f) *
-                                vmath::rotate((float)currentTime * 81.0f, 1.0f, 0.0f, 0.0f);
-        glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+                                                    sinf(1.3f * f) * cosf(1.5f * f) * 2.0f)) *
+                                 rotate(radians((float)currentTime * 45.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                                 rotate(radians((float)currentTime * 81.0f), vec3(1.0f, 0.0f, 0.0f));
+        glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0);
 #endif
     }

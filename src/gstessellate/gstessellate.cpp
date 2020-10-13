@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,9 +22,29 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+#include <shader.h>
 #include <cmath>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class gstessellate_app : public sb7::application
 {
@@ -39,111 +59,14 @@ class gstessellate_app : public sb7::application
 
     virtual void startup()
     {
-        static const char * vs_source[] =
-        {
-            "// Vertex Shader                                                                          \n"
-            "// OpenGL SuperBible                                                                      \n"
-            "#version 410 core                                                                         \n"
-            "                                                                                          \n"
-            "// Incoming per vertex... position and normal                                             \n"
-            "in vec4 vVertex;                                                                          \n"
-            "                                                                                          \n"
-            "void main(void)                                                                           \n"
-            "{                                                                                         \n"
-            "    gl_Position = vVertex;                                                                \n"
-            "}                                                                                         \n"
-        };
+       
+        GLuint vs = sb7::shader::load("media/shaders/gstessellate/gstessellate.vs.glsl", GL_VERTEX_SHADER);
+        GLuint gs = sb7::shader::load("media/shaders/gstessellate/gstessellate.gs.glsl", GL_GEOMETRY_SHADER);
+        GLuint fs = sb7::shader::load("media/shaders/gstessellate/gstessellate.fs.glsl", GL_FRAGMENT_SHADER);
 
-        static const char * gs_source[] =
-        {
-            "// Geometry Shader                                                            \n"
-            "// Graham Sellers                                                             \n"
-            "// OpenGL SuperBible                                                          \n"
-            "#version 410 core                                                             \n"
-            "                                                                              \n"
-            "                                                                              \n"
-            "layout (triangles) in;                                                        \n"
-            "layout (triangle_strip, max_vertices = 12) out;                                \n"
-            "                                                                              \n"
-            "uniform float stretch = 0.7;                                                  \n"
-            "                                                                              \n"
-            "flat out vec4 color;                                                          \n"
-            "                                                                              \n"
-            "uniform mat4 mvpMatrix;                                                       \n"
-            "uniform mat4 mvMatrix;                                                        \n"
-            "                                                                              \n"
-            "void make_face(vec3 a, vec3 b, vec3 c)                                        \n"
-            "{                                                                             \n"
-            "    vec3 face_normal = normalize(cross(c - a, c - b));                        \n"
-            "    vec4 face_color = vec4(1.0, 0.4, 0.7, 1.0) * (mat3(mvMatrix) * face_normal).z;  \n"
-            "    gl_Position = mvpMatrix * vec4(a, 1.0);                                   \n"
-            "    color = face_color;                                                       \n"
-            "    EmitVertex();                                                             \n"
-            "                                                                              \n"
-            "    gl_Position = mvpMatrix * vec4(b, 1.0);                                   \n"
-            "    color = face_color;                                                       \n"
-            "    EmitVertex();                                                             \n"
-            "                                                                              \n"
-            "    gl_Position = mvpMatrix * vec4(c, 1.0);                                   \n"
-            "    color = face_color;                                                       \n"
-            "    EmitVertex();                                                             \n"
-            "                                                                              \n"
-            "    EndPrimitive();                                                           \n"
-            "}                                                                             \n"
-            "                                                                              \n"
-            "void main(void)                                                               \n"
-            "{                                                                             \n"
-            "    int n;                                                                    \n"
-            "    vec3 a = gl_in[0].gl_Position.xyz;                                        \n"
-            "    vec3 b = gl_in[1].gl_Position.xyz;                                        \n"
-            "    vec3 c = gl_in[2].gl_Position.xyz;                                        \n"
-            "                                                                              \n"
-            "    vec3 d = (a + b) * stretch;                                               \n"
-            "    vec3 e = (b + c) * stretch;                                               \n"
-            "    vec3 f = (c + a) * stretch;                                               \n"
-            "                                                                              \n"
-            "    a *= (2.0 - stretch);                                                     \n"
-            "    b *= (2.0 - stretch);                                                     \n"
-            "    c *= (2.0 - stretch);                                                     \n"
-
-            "    make_face(a, d, f);                                                       \n"
-            "    make_face(d, b, e);                                                       \n"
-            "    make_face(e, c, f);                                                       \n"
-            "    make_face(d, e, f);                                                       \n"
-
-            "    EndPrimitive();                                                           \n"
-            "}                                                                             \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "// Fragment Shader                                                      \n"
-            "// Graham Sellers                                                       \n"
-            "// OpenGL SuperBible                                                    \n"
-            "#version 410 core                                                       \n"
-            "                                                                        \n"
-            "flat in vec4 color;                                                     \n"
-            "                                                                        \n"
-            "out vec4 output_color;                                                  \n"
-            "                                                                        \n"
-            "void main(void)                                                         \n"
-            "{                                                                       \n"
-            "    output_color = color;                                               \n"
-            "}                                                                       \n"
-        };
 
         program = glCreateProgram();
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
-        GLuint gs = glCreateShader(GL_GEOMETRY_SHADER);
-        glShaderSource(gs, 1, gs_source, NULL);
-        glCompileShader(gs);
-
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
+       
 
         glAttachShader(program, vs);
         glAttachShader(program, gs);
@@ -203,17 +126,17 @@ class gstessellate_app : public sb7::application
 
         glUseProgram(program);
 
-        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+         mat4 proj_matrix =  perspective(radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      1000.0f);
-        vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -8.0f) *
-                                vmath::rotate((float)currentTime * 71.0f, 0.0f, 1.0f, 0.0f) *
-                                vmath::rotate((float)currentTime * 10.0f, 1.0f, 0.0f, 0.0f);
+         mat4 mv_matrix =  translate(vec3(0.0f, 0.0f, -8.0f)) *
+                                 rotate(radians((float)currentTime * 71.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                                 rotate(radians((float)currentTime * 10.0f), vec3(1.0f, 0.0f, 0.0f));
 
-        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, proj_matrix * mv_matrix);
+        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, value_ptr(proj_matrix * mv_matrix));
 
-        glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+        glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
 
         glUniform1f(stretch_location, sinf(f * 4.0f) * 0.75f + 1.0f);
 

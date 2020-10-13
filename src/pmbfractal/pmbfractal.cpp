@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,12 +24,35 @@
 #include <sb7.h>
 #include <shader.h>
 #include <object.h>
-#include <vmath.h>
+
 #include <sb7textoverlay.h>
 #include <sb7ktx.h>
 
 #include <math.h>
 #include <omp.h>
+
+#include <glm/glm.hpp>
+//#include <glm/gtc/type_ptr.hpp>
+//#include <glm/gtx/transform.hpp>
+
+using glm::mat4;
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+
+//using glm::perspective;
+//using glm::lookAt;
+//using glm::frustum;
+
+//using glm::identity;
+//using glm::translate;
+//using glm::rotate;
+//using glm::scale;
+
+//using glm::radians;
+//using glm::value_ptr;
+
+
 
 class pmbfractal_app : public sb7::application
 {
@@ -75,8 +98,8 @@ protected:
 
     struct
     {
-        vmath::vec2 C;
-        vmath::vec2 offset;
+         vec2 C;
+         vec2 offset;
         float       zoom;
     } fractparams;
 };
@@ -129,17 +152,17 @@ void pmbfractal_app::startup()
 
 void pmbfractal_app::update_fractal()
 {
-    const vmath::vec2 C = fractparams.C; // (0.03f, -0.2f);
+    const  vec2 C = fractparams.C; // (0.03f, -0.2f);
     const float thresh_squared = 256.0f;
     const float zoom = fractparams.zoom;
-    const vmath::vec2 offset = fractparams.offset;
+    const  vec2 offset = fractparams.offset;
 
 #pragma omp parallel for schedule (dynamic, 16)
     for (int y = 0; y < FRACTAL_HEIGHT; y++)
     {
         for (int x = 0; x < FRACTAL_WIDTH; x++)
         {
-            vmath::vec2 Z;
+             vec2 Z;
             Z[0] = zoom * (float(x) / float(FRACTAL_WIDTH) - 0.5f) + offset[0];
             Z[1] = zoom * (float(y) / float(FRACTAL_HEIGHT) - 0.5f) + offset[1];
             unsigned char * ptr = mapped_buffer + y * FRACTAL_WIDTH + x;
@@ -147,7 +170,7 @@ void pmbfractal_app::update_fractal()
             int it;
             for (it = 0; it < 256; it++)
             {
-                vmath::vec2 Z_squared;
+                 vec2 Z_squared;
 
                 Z_squared[0] = Z[0] * Z[0] - Z[1] * Z[1];
                 Z_squared[1] = 2.0f * Z[0] * Z[1];
@@ -167,9 +190,9 @@ void pmbfractal_app::render(double currentTime)
     static int frames = 0;
     float nowTime = float(currentTime);
 
-    fractparams.C = vmath::vec2(1.5f - cosf(nowTime * 0.4f) * 0.5f,
+    fractparams.C =  vec2(1.5f - cosf(nowTime * 0.4f) * 0.5f,
                                 1.5f + cosf(nowTime * 0.5f) * 0.5f) * 0.3f;
-    fractparams.offset = vmath::vec2(cosf(nowTime * 0.14f),
+    fractparams.offset =  vec2(cosf(nowTime * 0.14f),
                                      cosf(nowTime * 0.25f)) * 0.25f;
     fractparams.zoom = (sinf(nowTime) + 1.3f) * 0.7f;
 

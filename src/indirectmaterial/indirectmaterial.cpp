@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,9 +24,30 @@
 #include <sb7.h>
 #include <shader.h>
 #include <object.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include <sb7color.h>
 #include <sb7textoverlay.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
 
 struct DrawArraysIndirectCommand
 {
@@ -38,17 +59,17 @@ struct DrawArraysIndirectCommand
 
 struct MaterialProperties
 {
-    vmath::vec4     ambient;
-    vmath::vec4     diffuse;
-    vmath::vec3     specular;
+    vec4     ambient;
+    vec4     diffuse;
+    vec3     specular;
     float           specular_power;
 };
 
 struct FrameUniforms
 {
-    vmath::mat4 view_matrix;
-    vmath::mat4 proj_matrix;
-    vmath::mat4 viewproj_matrix;
+    mat4 view_matrix;
+    mat4 proj_matrix;
+    mat4 viewproj_matrix;
 };
 
 class indirectmaterial_app : public sb7::application
@@ -143,9 +164,9 @@ void indirectmaterial_app::startup()
 
     glGenBuffers(1, &transform_buffer);
     // glBindBuffer(GL_UNIFORM_BUFFER, transform_buffer);
-    // glBufferStorage(GL_UNIFORM_BUFFER, NUM_DRAWS * sizeof(vmath::mat4), nullptr, GL_MAP_WRITE_BIT);
+    // glBufferStorage(GL_UNIFORM_BUFFER, NUM_DRAWS * sizeof(mat4), nullptr, GL_MAP_WRITE_BIT);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, transform_buffer);
-    glBufferStorage(GL_SHADER_STORAGE_BUFFER, NUM_DRAWS * sizeof(vmath::mat4), nullptr, GL_MAP_WRITE_BIT);
+    glBufferStorage(GL_SHADER_STORAGE_BUFFER, NUM_DRAWS * sizeof(mat4), nullptr, GL_MAP_WRITE_BIT);
     
     glGenBuffers(1, &frame_uniforms_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, frame_uniforms_buffer);
@@ -164,9 +185,9 @@ void indirectmaterial_app::startup()
     for (i = 0; i < NUM_MATERIALS; i++)
     {
         float f = float(i) / float(NUM_MATERIALS);
-        pMaterial[i].ambient = (vmath::vec4(sinf(f * 3.7f), sinf(f * 5.7f + 3.0f), sinf(f * 4.3f + 2.0f), 1.0f) + vmath::vec4(1.0f, 1.0f, 2.0f, 0.0f)) * 0.1f;
-        pMaterial[i].diffuse = (vmath::vec4(sinf(f * 9.9f + 6.0f), sinf(f * 3.1f + 2.5f), sinf(f * 7.2f + 9.0f), 1.0f) + vmath::vec4(1.0f, 2.0f, 2.0f, 0.0f)) * 0.4f;
-        pMaterial[i].specular = (vmath::vec3(sinf(f * 1.6f + 4.0f), sinf(f * 0.8f + 2.7f), sinf(f * 5.2f + 8.0f)) + vmath::vec3(19.0f, 19.0f, 19.0f)) * 0.6f;
+        pMaterial[i].ambient = (vec4(sinf(f * 3.7f), sinf(f * 5.7f + 3.0f), sinf(f * 4.3f + 2.0f), 1.0f) + vec4(1.0f, 1.0f, 2.0f, 0.0f)) * 0.1f;
+        pMaterial[i].diffuse = (vec4(sinf(f * 9.9f + 6.0f), sinf(f * 3.1f + 2.5f), sinf(f * 7.2f + 9.0f), 1.0f) + vec4(1.0f, 2.0f, 2.0f, 0.0f)) * 0.4f;
+        pMaterial[i].specular = (vec3(sinf(f * 1.6f + 4.0f), sinf(f * 0.8f + 2.7f), sinf(f * 5.2f + 8.0f)) + vec3(19.0f, 19.0f, 19.0f)) * 0.6f;
         pMaterial[i].specular_power = 200.0f + sinf(f) * 50.0f;
     }
 
@@ -187,17 +208,17 @@ void indirectmaterial_app::render(double currentTime)
     float t = float(currentTime);
     int i;
 
-    const vmath::mat4 view_matrix = vmath::lookat(vmath::vec3(30.0f * cosf(t * 0.023f), 30.0f * cosf(t * 0.023f), 30.0f * sinf(t * 0.037f) - 200.0f),
-                                                  vmath::vec3(0.0f, 0.0f, 0.0f),
-                                                  vmath::normalize(vmath::vec3(0.1f - cosf(t * 0.1f) * 0.3f, 1.0f, 0.0f)));
-    const vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+    const mat4 view_matrix = lookAt(vec3(30.0f * cosf(t * 0.023f), 30.0f * cosf(t * 0.023f), 30.0f * sinf(t * 0.037f) - 200.0f),
+                                                  vec3(0.0f, 0.0f, 0.0f),
+                                                  normalize(vec3(0.1f - cosf(t * 0.1f) * 0.3f, 1.0f, 0.0f)));
+    const mat4 proj_matrix = perspective(radians(50.0f),
                                                        (float)info.windowWidth / (float)info.windowHeight,
                                                        1.0f,
                                                        2000.0f);
 
     glViewport(0, 0, info.windowWidth, info.windowHeight);
-    glClearBufferfv(GL_COLOR, 0, sb7::color::Black);
-    glClearBufferfv(GL_DEPTH, 0, sb7::color::White);
+    glClearBufferfv(GL_COLOR, 0, value_ptr(sb7::color::Black));
+    glClearBufferfv(GL_DEPTH, 0, value_ptr(sb7::color::White));
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, frame_uniforms_buffer);
     FrameUniforms* pUniforms = (FrameUniforms*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(FrameUniforms), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
@@ -206,15 +227,17 @@ void indirectmaterial_app::render(double currentTime)
     pUniforms->viewproj_matrix = view_matrix * proj_matrix;
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-    vmath::mat4* pModelMatrices = (vmath::mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, NUM_DRAWS * sizeof(vmath::mat4), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    mat4* pModelMatrices = (mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, NUM_DRAWS * sizeof(mat4), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, transform_buffer);
 
     float f = t * 0.1f;
     for (i = 0; i < draws_per_frame; i++)
     {
-        vmath::mat4 m = vmath::translate(sinf(f * 7.3f) * 70.0f, sinf(f * 3.7f + 2.0f) * 70.0f, sinf(f * 2.9f + 8.0f) * 70.0f) *
-                        vmath::rotate(f * 330.0f, f * 490.0f, f * 250.0f);
+        mat4 m = translate(vec3(sinf(f * 7.3f) * 70.0f, sinf(f * 3.7f + 2.0f) * 70.0f, sinf(f * 2.9f + 8.0f) * 70.0f)) *
+                        rotate(radians(f * 330.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                        rotate(radians(f * 490.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                        rotate(radians(f * 250.0f), vec3(0.0f, 0.0f, 1.0f));
         pModelMatrices[i] = m;
         f += 3.1f;
     }

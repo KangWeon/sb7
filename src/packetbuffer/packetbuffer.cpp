@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -24,8 +24,27 @@
 #include <sb7.h>
 #include <shader.h>
 #include <object.h>
-#include <vmath.h>
 #include <sb7textoverlay.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 #define ATOMIC_PACKET_BUFFER
 
@@ -466,14 +485,14 @@ void packetrender_app::startup()
 
     struct
     {
-        vmath::mat4 mv_matrix;
-        vmath::mat4 view_matrix;
-        vmath::mat4 proj_matrix;
+        mat4 mv_matrix;
+        mat4 view_matrix;
+        mat4 proj_matrix;
     } matrices;
 
-    matrices.view_matrix = vmath::translate(0.0f, 0.0f, -1.0f);
-    matrices.mv_matrix = matrices.view_matrix * vmath::rotate(30.0f, 0.0f, 1.0f, 0.0f);
-    matrices.proj_matrix = vmath::frustum(-1.0f, 1.0f, 1.0f, -1.0f, 0.1f, 1000.0f);
+    matrices.view_matrix = translate(vec3(0.0f, 0.0f, -1.0f));
+    matrices.mv_matrix = matrices.view_matrix * rotate(radians(30.0f), vec3(0.0f, 1.0f, 0.0f));
+    matrices.proj_matrix = frustum(-1.0f, 1.0f, 1.0f, -1.0f, 0.1f, 1000.0f);
 
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, buffer);

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright¢â 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,9 +22,29 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include <sb7ktx.h>
 #include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class sdfdemo_app : public sb7::application
 {
@@ -78,9 +98,9 @@ public:
 
         glClearBufferfv(GL_COLOR, 0, black);
 
-        float scale = (float)(cos(currentTime * 0.2) * sin(currentTime * 0.15) * 6.0 + 3.001);
-        float cos_t = (float)cos(currentTime) * scale;
-        float sin_t = (float)sin(currentTime) * scale;
+        float scale_f = (float)(cos(currentTime * 0.2) * sin(currentTime * 0.15) * 6.0 + 3.001);
+        float cos_t = (float)cos(currentTime) * scale_f;
+        float sin_t = (float)sin(currentTime) * scale_f;
 
         float m[] =
         {
@@ -96,7 +116,7 @@ public:
             0.0f, 0.0f, 1.0f
         };
 
-        vmath::mat4 transform;
+         mat4 transform;
 
         int num_chars = 1;
         float tz = -10.0f;
@@ -108,30 +128,30 @@ public:
                 num_chars = 1;
                 tz = -4.0f;
                 glBindTexture(GL_TEXTURE_2D_ARRAY, logo_texture);
-                transform = vmath::translate(0.0f, 0.0f, -6.0f + cos_t * 0.25f) *
-                            vmath::rotate(cos_t * 12.0f, vmath::vec3(1.0, 0.0, 0.0)) *
-                            vmath::rotate(sin_t * 15.0f, vmath::vec3(0.0, 1.0, 0.0)) *
-                            vmath::scale(6.0f, 6.0f, 1.0f);
+                transform =  translate(vec3(0.0f, 0.0f, -6.0f + cos_t * 0.25f)) *
+                             rotate(radians(cos_t * 12.0f),  vec3(1.0, 0.0, 0.0)) *
+                             rotate(radians(sin_t * 15.0f),  vec3(0.0, 1.0, 0.0)) *
+                             scale(vec3(6.0f, 6.0f, 1.0f));
                 break;
             case MODE_TEXT:
                 num_chars = 24;
                 tz = -10.0f;
                 rs = 4.0;
                 glBindTexture(GL_TEXTURE_2D_ARRAY, sdf_texture);
-                transform = vmath::translate(0.0f, 0.0f, tz + cos_t) *
-                            vmath::rotate(cos_t * 4.0f * rs, vmath::vec3(1.0, 0.0, 0.0)) *
-                            vmath::rotate(sin_t * 3.0f * rs, vmath::vec3(0.0, 0.0, 1.0)) *
-                            vmath::translate(-float((num_chars - 1)) + sin_t, 0.0f, 0.0f);
+                transform =  translate(vec3(0.0f, 0.0f, tz + cos_t)) *
+                             rotate(radians(cos_t * 4.0f * rs),  vec3(1.0, 0.0, 0.0)) *
+                             rotate(radians(sin_t * 3.0f * rs),  vec3(0.0, 0.0, 1.0)) *
+                             translate(vec3(-float((num_chars - 1)) + sin_t, 0.0f, 0.0f));
                 break;
         }
 
-        vmath::mat4 projection;
+         mat4 projection;
 
-        projection = vmath::frustum(-aspect, aspect, 1.0, -1.0, 1.0f, 100.0f);
+        projection =  frustum(-aspect, aspect, 1.0f, -1.0f, 1.0f, 100.0f);
 
         glUseProgram(sdf_program);
         glUniformMatrix3fv(0, 1, GL_FALSE, m2);
-        glUniformMatrix4fv(1, 1, GL_FALSE, projection * transform);
+        glUniformMatrix4fv(1, 1, GL_FALSE, value_ptr(projection * transform));
         // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, num_chars);
     }

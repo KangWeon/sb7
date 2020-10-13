@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,12 +22,33 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include <sb7ktx.h>
 #include <shader.h>
 #include <object.h>
 
 #include <string>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
 static void print_shader_log(GLuint shader)
 {
     std::string str;
@@ -132,15 +153,15 @@ public:
 
         glGenBuffers(1, &ubo_transform);
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_transform);
-        glBufferData(GL_UNIFORM_BUFFER, (2 + SPHERE_COUNT) * sizeof(vmath::mat4), NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, (2 + SPHERE_COUNT) * sizeof( mat4), NULL, GL_DYNAMIC_DRAW);
 
         struct material
         {
-            vmath::vec3     diffuse_color;
+             vec3     diffuse_color;
             unsigned int    : 32;           // pad
-            vmath::vec3     specular_color;
+             vec3     specular_color;
             float           specular_power;
-            vmath::vec3     ambient_color;
+             vec3     ambient_color;
             unsigned int    : 32;           // pad
         };
 
@@ -153,10 +174,10 @@ public:
         for (i = 0; i < SPHERE_COUNT; i++)
         {
             float fi = 3.14159267f * (float)i / 8.0f;
-            m[i].diffuse_color  = vmath::vec3(sinf(fi) * 0.5f + 0.5f, sinf(fi + 1.345f) * 0.5f + 0.5f, sinf(fi + 2.567f) * 0.5f + 0.5f);
-            m[i].specular_color = vmath::vec3(2.8f, 2.8f, 2.9f);
+            m[i].diffuse_color  =  vec3(sinf(fi) * 0.5f + 0.5f, sinf(fi + 1.345f) * 0.5f + 0.5f, sinf(fi + 2.567f) * 0.5f + 0.5f);
+            m[i].specular_color =  vec3(2.8f, 2.8f, 2.9f);
             m[i].specular_power = 30.0f;
-            m[i].ambient_color  = vmath::vec3(ambient * 0.025f);
+            m[i].ambient_color  =  vec3(ambient * 0.025f);
             ambient *= 1.5f;
         }
         glUnmapBuffer(GL_UNIFORM_BUFFER);
@@ -200,19 +221,20 @@ public:
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_transform);
         struct transforms_t
         {
-            vmath::mat4 mat_proj;
-            vmath::mat4 mat_view;
-            vmath::mat4 mat_model[SPHERE_COUNT];
+             mat4 mat_proj;
+             mat4 mat_view;
+             mat4 mat_model[SPHERE_COUNT];
         } * transforms = (transforms_t *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(transforms_t), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-        transforms->mat_proj = vmath::perspective(50.0f, (float)info.windowWidth / (float)info.windowHeight, 1.0f, 1000.0f);
-        transforms->mat_view = vmath::translate(0.0f, 0.0f, -20.0f);
+        transforms->mat_proj =  perspective(radians(50.0f), (float)info.windowWidth / (float)info.windowHeight, 1.0f, 1000.0f);
+        transforms->mat_view =  translate(vec3(0.0f, 0.0f, -20.0f));
         for (i = 0; i < SPHERE_COUNT; i++)
         {
             float fi = 3.141592f * (float)i / 16.0f;
             // float r = cosf(fi * 0.25f) * 0.4f + 1.0f;
             float r = (i & 2) ? 0.6f : 1.5f;
-            transforms->mat_model[i] = vmath::translate(cosf(t + fi) * 5.0f * r, sinf(t + fi * 4.0f) * 4.0f, sinf(t + fi) * 5.0f * r) *
-                                       vmath::rotate(sinf(t + fi * 2.13f) * 75.0f, cosf(t + fi * 1.37f) * 92.0f, 0.0f);
+            transforms->mat_model[i] =  translate(vec3(cosf(t + fi) * 5.0f * r, sinf(t + fi * 4.0f) * 4.0f, sinf(t + fi) * 5.0f * r)) *
+                                        rotate(radians(sinf(t + fi * 2.13f) * 75.0f), vec3(1.0f, 0.0f, 0.0f)) * 
+                                        rotate(radians(cosf(t + fi * 1.37f) * 92.0f), vec3(0.0f, 1.0f, 0.0f));
         }
         glUnmapBuffer(GL_UNIFORM_BUFFER);
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo_material);

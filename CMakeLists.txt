@@ -109,7 +109,7 @@ set(EXAMPLES
   raytracer
   rimlight
   sampleshading
-# sb6mrender
+  sb6mrender
   sdfdemo
   shadowmapping
   shapedpoints

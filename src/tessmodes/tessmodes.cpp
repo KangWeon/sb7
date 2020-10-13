@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright ï¿½ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,6 +25,28 @@
 #include <sb7textoverlay.h>
 #include <sb7color.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+#include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+//using glm::vec4;
+
+//using glm::perspective;
+//using glm::lookAt;
+//using glm::frustum;
+
+//using glm::identity;
+//using glm::translate;
+//using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
 class tessmodes_app : public sb7::application
 {
 public:
@@ -45,119 +67,7 @@ public:
 
     virtual void startup()
     {
-        static const char * vs_source[] =
-        {
-            "#version 420 core                                                 \n"
-            "                                                                  \n"
-            "void main(void)                                                   \n"
-            "{                                                                 \n"
-            "    const vec4 vertices[] = vec4[](vec4( 0.4, -0.4, 0.5, 1.0),    \n"
-            "                                   vec4(-0.4, -0.4, 0.5, 1.0),    \n"
-            "                                   vec4( 0.4,  0.4, 0.5, 1.0),    \n"
-            "                                   vec4(-0.4,  0.4, 0.5, 1.0));   \n"
-            "                                                                  \n"
-            "    gl_Position = vertices[gl_VertexID];                          \n"
-            "}                                                                 \n"
-        };
-
-        static const char * tcs_source_triangles[] =
-        {
-            "#version 420 core                                                                 \n"
-            "                                                                                  \n"
-            "layout (vertices = 3) out;                                                        \n"
-            "                                                                                  \n"
-            "void main(void)                                                                   \n"
-            "{                                                                                 \n"
-            "    if (gl_InvocationID == 0)                                                     \n"
-            "    {                                                                             \n"
-            "        gl_TessLevelInner[0] = 5.0;                                               \n"
-            "        gl_TessLevelOuter[0] = 8.0;                                               \n"
-            "        gl_TessLevelOuter[1] = 8.0;                                               \n"
-            "        gl_TessLevelOuter[2] = 8.0;                                               \n"
-            "    }                                                                             \n"
-            "    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;     \n"
-            "}                                                                                 \n"
-        };
-
-        static const char * tes_source_triangles[] =
-        {
-            "#version 420 core                                                                 \n"
-            "                                                                                  \n"
-            "layout (triangles) in;                                                            \n"
-            "                                                                                  \n"
-            "void main(void)                                                                   \n"
-            "{                                                                                 \n"
-            "    gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position) +                       \n"
-            "                  (gl_TessCoord.y * gl_in[1].gl_Position) +                       \n"
-            "                  (gl_TessCoord.z * gl_in[2].gl_Position);                        \n"
-            "}                                                                                 \n"
-        };
-
-        static const char * tes_source_triangles_as_points[] =
-        {
-            "#version 420 core                                                                 \n"
-            "                                                                                  \n"
-            "layout (triangles, point_mode) in;                                                \n"
-            "                                                                                  \n"
-            "void main(void)                                                                   \n"
-            "{                                                                                 \n"
-            "    gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position) +                       \n"
-            "                  (gl_TessCoord.y * gl_in[1].gl_Position) +                       \n"
-            "                  (gl_TessCoord.z * gl_in[2].gl_Position);                        \n"
-            "}                                                                                 \n"
-        };
-
-        static const char * tcs_source_quads[] =
-        {
-            "#version 420 core                                                                   \n"
-            "                                                                                    \n"
-            "layout (vertices = 4) out;                                                          \n"
-            "                                                                                    \n"
-            "void main(void)                                                                     \n"
-            "{                                                                                   \n"
-            "    if (gl_InvocationID == 0)                                                       \n"
-            "    {                                                                               \n"
-            "        gl_TessLevelInner[0] = 9.0;                                                 \n"
-            "        gl_TessLevelInner[1] = 7.0;                                                 \n"
-            "        gl_TessLevelOuter[0] = 3.0;                                                 \n"
-            "        gl_TessLevelOuter[1] = 5.0;                                                 \n"
-            "        gl_TessLevelOuter[2] = 3.0;                                                 \n"
-            "        gl_TessLevelOuter[3] = 5.0;                                                 \n"
-            "    }                                                                               \n"
-            "    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;       \n"
-            "}                                                                                   \n"
-        };
-
-        static const char * tes_source_quads[] =
-        {
-            "#version 420 core                                                                    \n"
-            "                                                                                     \n"
-            "layout (quads) in;                                                                   \n"
-            "                                                                                     \n"
-            "void main(void)                                                                      \n"
-            "{                                                                                    \n"
-            "    vec4 p1 = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);       \n"
-            "    vec4 p2 = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, gl_TessCoord.x);       \n"
-            "    gl_Position = mix(p1, p2, gl_TessCoord.y);                                       \n"
-            "}                                                                                    \n"
-        };
-
-        static const char * tcs_source_isolines[] =
-        {
-            "#version 420 core                                                                   \n"
-            "                                                                                    \n"
-            "layout (vertices = 4) out;                                                          \n"
-            "                                                                                    \n"
-            "void main(void)                                                                     \n"
-            "{                                                                                   \n"
-            "    if (gl_InvocationID == 0)                                                       \n"
-            "    {                                                                               \n"
-            "        gl_TessLevelOuter[0] = 5.0;                                                 \n"
-            "        gl_TessLevelOuter[1] = 5.0;                                                 \n"
-            "    }                                                                               \n"
-            "    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;       \n"
-            "}                                                                                   \n"
-        };
+ 
 
         /*
         static const char * tes_source_isolines[] =
@@ -175,52 +85,39 @@ public:
         };
         */
 
-        static const char * tes_source_isolines[] =
-        {
-            "#version 420 core                                                                    \n"
-            "                                                                                     \n"
-            "layout (isolines) in;                                                                \n"
-            "                                                                                     \n"
-            "void main(void)                                                                      \n"
-            "{                                                                                    \n"
-            "    float r = (gl_TessCoord.y + gl_TessCoord.x / gl_TessLevelOuter[0]);              \n"
-            "    float t = gl_TessCoord.x * 2.0 * 3.14159;                                        \n"
-            "    gl_Position = vec4(sin(t) * r, cos(t) * r, 0.5, 1.0);                            \n"
-            "}                                                                                    \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "out vec4 color;                                                    \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    color = vec4(1.0);                                             \n"
-            "}                                                                  \n"
-        };
+        GLuint vs = sb7::shader::load("media/shaders/tessmodes/tessmodes.vs.glsl", GL_VERTEX_SHADER);
+        
+        GLuint tcs_quads = sb7::shader::load("media/shaders/tessmodes/tessmodes_quards.tcs.glsl", GL_TESS_CONTROL_SHADER);
+        GLuint tcs_triangles = sb7::shader::load("media/shaders/tessmodes/tessmodes_triangles.tcs.glsl", GL_TESS_CONTROL_SHADER);
+        GLuint tcs_isolines = sb7::shader::load("media/shaders/tessmodes/tessmodes_isolines.tcs.glsl", GL_TESS_CONTROL_SHADER);
+        
+        GLuint tes_quads = sb7::shader::load("media/shaders/tessmodes/tessmodes_quards.tes.glsl", GL_TESS_EVALUATION_SHADER);
+        GLuint tes_triangles = sb7::shader::load("media/shaders/tessmodes/tessmodes_triangles.tes.glsl", GL_TESS_EVALUATION_SHADER);
+        GLuint tes_triangles_as_points = sb7::shader::load("media/shaders/tessmodes/tessmodes_triangles_aspoints.tes.glsl", GL_TESS_EVALUATION_SHADER);
+        GLuint tes_isolines = sb7::shader::load("media/shaders/tessmodes/tessmodes_isolines.tes.glsl", GL_TESS_EVALUATION_SHADER);
+        
+        GLuint fs = sb7::shader::load("media/shaders/tessmodes/tessmodes.fs.glsl", GL_FRAGMENT_SHADER);
 
         int i;
 
-        static const char * const * vs_sources[] =
+        static GLuint vs_handles[] =
         {
-            vs_source, vs_source, vs_source, vs_source
+            vs, vs, vs, vs
         };
 
-        static const char * const * tcs_sources[] =
+        static GLuint tcs_handles[] =
         {
-            tcs_source_quads, tcs_source_triangles, tcs_source_triangles, tcs_source_isolines
+            tcs_quads, tcs_triangles, tcs_triangles, tcs_isolines
         };
 
-        static const char * const * tes_sources[] =
+        static GLuint tes_handles[] =
         {
-            tes_source_quads, tes_source_triangles, tes_source_triangles_as_points, tes_source_isolines
+            tes_quads, tes_triangles, tes_triangles_as_points, tes_isolines
         };
 
-        static const char * const * fs_sources[] =
+        static GLuint fs_handles[] =
         {
-            fs_source, fs_source, fs_source, fs_source
+            fs, fs, fs, fs
         };
 
         overlay.init(80, 50);
@@ -228,21 +125,14 @@ public:
         for (i = 0; i < 4; i++)
         {
             program[i] = glCreateProgram();
-            GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(vs, 1, vs_sources[i], NULL);
-            glCompileShader(vs);
 
-            GLuint tcs = glCreateShader(GL_TESS_CONTROL_SHADER);
-            glShaderSource(tcs, 1, tcs_sources[i], NULL);
-            glCompileShader(tcs);
+            GLuint vs = vs_handles[i];
 
-            GLuint tes = glCreateShader(GL_TESS_EVALUATION_SHADER);
-            glShaderSource(tes, 1, tes_sources[i], NULL);
-            glCompileShader(tes);
+            GLuint tcs = tcs_handles[i];
 
-            GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(fs, 1, fs_sources[i], NULL);
-            glCompileShader(fs);
+            GLuint tes = tes_handles[i];
+
+            GLuint fs = fs_handles[i];
 
             glAttachShader(program[i], vs);
             glAttachShader(program[i], tcs);
@@ -265,7 +155,7 @@ public:
 
     virtual void render(double currentTime)
     {
-        glClearBufferfv(GL_COLOR, 0, sb7::color::Black);
+        glClearBufferfv(GL_COLOR, 0, value_ptr(sb7::color::Black));
 
         glUseProgram(program[program_index]);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

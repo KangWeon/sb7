@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,9 +22,15 @@
  */
 
 #include <sb7.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <sb7ktx.h>
 #include <sb7textoverlay.h>
 #include <sb7color.h>
+
+using glm::value_ptr;
 
 class fontdemo_app : public sb7::application
 {
@@ -46,6 +52,7 @@ class fontdemo_app : public sb7::application
 
         // _text_overlay.init(48, 32, "media/textures/font16x16.ktx");
         text_overlay.init(64, 32, "media/textures/cp437_9x16.ktx");
+        //text_overlay.init(64, 32, "media/textures/times.ttf");
         text_overlay.clear();
         text_overlay.print("This is a demo of bitmap font rendering.\n\n"
                            "This was printed as one string with newlines.\n\n"
@@ -70,7 +77,7 @@ class fontdemo_app : public sb7::application
             text_overlay.drawText(buffer, 0, 16);
         }
 
-        glClearBufferfv(GL_COLOR, 0, sb7::color::Green);
+        glClearBufferfv(GL_COLOR, 0, value_ptr(sb7::color::Green));
 
         glViewport(0, 0, info.windowWidth, info.windowHeight);
 

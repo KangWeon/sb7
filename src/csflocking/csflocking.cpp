@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,10 +22,33 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
-#include <shader.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/random.hpp>
+#include <glm/gtx/transform.hpp>
+
+#include <shader.h>
 #include <string>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
+using glm::linearRand;
+
 static void print_shader_log(GLuint shader)
 {
     std::string str;
@@ -84,27 +107,27 @@ public:
     virtual void startup()
     {
         // This is position and normal data for a paper airplane
-        static const vmath::vec3 geometry[] =
+        static const vec3 geometry[] =
         {
             // Positions
-            vmath::vec3(-5.0f, 1.0f, 0.0f),
-            vmath::vec3(-1.0f, 1.5f, 0.0f),
-            vmath::vec3(-1.0f, 1.5f, 7.0f),
-            vmath::vec3(0.0f, 0.0f, 0.0f),
-            vmath::vec3(0.0f, 0.0f, 10.0f),
-            vmath::vec3(1.0f, 1.5f, 0.0f),
-            vmath::vec3(1.0f, 1.5f, 7.0f),
-            vmath::vec3(5.0f, 1.0f, 0.0f),
+            vec3(-5.0f, 1.0f, 0.0f),
+            vec3(-1.0f, 1.5f, 0.0f),
+            vec3(-1.0f, 1.5f, 7.0f),
+            vec3(0.0f, 0.0f, 0.0f),
+            vec3(0.0f, 0.0f, 10.0f),
+            vec3(1.0f, 1.5f, 0.0f),
+            vec3(1.0f, 1.5f, 7.0f),
+            vec3(5.0f, 1.0f, 0.0f),
 
             // Normals
-            vmath::vec3(0.0f),
-            vmath::vec3(0.0f),
-            vmath::vec3(0.107f, -0.859f, 0.00f),
-            vmath::vec3(0.832f, 0.554f, 0.00f),
-            vmath::vec3(-0.59f, -0.395f, 0.00f),
-            vmath::vec3(-0.832f, 0.554f, 0.00f),
-            vmath::vec3(0.295f, -0.196f, 0.00f),
-            vmath::vec3(0.124f, 0.992f, 0.00f),
+            vec3(0.0f),
+            vec3(0.0f),
+            vec3(0.107f, -0.859f, 0.00f),
+            vec3(0.832f, 0.554f, 0.00f),
+            vec3(-0.59f, -0.395f, 0.00f),
+            vec3(-0.832f, 0.554f, 0.00f),
+            vec3(0.295f, -0.196f, 0.00f),
+            vec3(0.124f, 0.992f, 0.00f),
         };
 
         load_shaders();
@@ -128,11 +151,11 @@ public:
             glBindVertexArray(flock_render_vao[i]);
             glBindBuffer(GL_ARRAY_BUFFER, geometry_buffer);
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)(8 * sizeof(vmath::vec3)));
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)(8 * sizeof(vec3)));
 
             glBindBuffer(GL_ARRAY_BUFFER, flock_buffer[i]);
             glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(flock_member), NULL);
-            glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(flock_member), (void *)sizeof(vmath::vec4));
+            glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(flock_member), (void *)sizeof(vec4));
             glVertexAttribDivisor(2, 1);
             glVertexAttribDivisor(3, 1);
 
@@ -147,8 +170,9 @@ public:
 
         for (i = 0; i < FLOCK_SIZE; i++)
         {
-            ptr[i].position = (vmath::vec3::random() - vmath::vec3(0.5f)) * 300.0f;
-            ptr[i].velocity = (vmath::vec3::random() - vmath::vec3(0.5f));
+            
+            ptr[i].position = (vec3(linearRand(-1.0f, 1.0f), linearRand(-1.0f, 1.0f), linearRand(-1.0f, 1.0f)) - vec3(0.5f)) * 300.0f;
+            ptr[i].velocity = (vec3(linearRand(-1.0f, 1.0f), linearRand(-1.0f, 1.0f), linearRand(-1.0f, 1.0f)) - vec3(0.5f));
         }
 
         glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -165,13 +189,13 @@ public:
 
         glUseProgram(flock_update_program);
 
-        vmath::vec3 goal = vmath::vec3(sinf(t * 0.34f),
+        vec3 goal = vec3(sinf(t * 0.34f),
                                        cosf(t * 0.29f),
                                        sinf(t * 0.12f) * cosf(t * 0.5f));
 
-        goal = goal * vmath::vec3(35.0f, 25.0f, 60.0f);
+        goal = goal * vec3(35.0f, 25.0f, 60.0f);
 
-        glUniform3fv(uniforms.update.goal, 1, goal);
+        glUniform3fv(uniforms.update.goal, 1, value_ptr(goal));
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, flock_buffer[frame_index]);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, flock_buffer[frame_index ^ 1]);
@@ -184,16 +208,16 @@ public:
 
         glUseProgram(flock_render_program);
 
-        vmath::mat4 mv_matrix = vmath::lookat(vmath::vec3(0.0f, 0.0f, -400.0f),
-                                              vmath::vec3(0.0f, 0.0f, 0.0f),
-                                              vmath::vec3(0.0f, 1.0f, 0.0f));
-        vmath::mat4 proj_matrix = vmath::perspective(60.0f,
+        mat4 mv_matrix = lookAt(vec3(0.0f, 0.0f, -400.0f),
+                                              vec3(0.0f, 0.0f, 0.0f),
+                                              vec3(0.0f, 1.0f, 0.0f));
+        mat4 proj_matrix = perspective(radians(60.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      3000.0f);
-        vmath::mat4 mvp = proj_matrix * mv_matrix;
+        mat4 mvp = proj_matrix * mv_matrix;
 
-        glUniformMatrix4fv(uniforms.render.mvp, 1, GL_FALSE, mvp);
+        glUniformMatrix4fv(uniforms.render.mvp, 1, GL_FALSE, value_ptr(mvp));
 
         glBindVertexArray(flock_render_vao[frame_index]);
 
@@ -254,9 +278,9 @@ private:
 
     struct flock_member
     {
-        vmath::vec3 position;
+        vec3 position;
         unsigned int : 32;
-        vmath::vec3 velocity;
+        vec3 velocity;
         unsigned int : 32;
     };
 

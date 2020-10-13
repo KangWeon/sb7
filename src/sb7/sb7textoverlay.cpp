@@ -43,7 +43,7 @@ void text_overlay::init(int width, int height, const char* font)
 
     static const char * vs_source[] =
     {
-        "#version 410 core\n"
+        "#version 440 core\n"
         "void main(void)\n"
         "{\n"
         "    gl_Position = vec4(float((gl_VertexID >> 1) & 1) * 2.0 - 1.0,\n"
@@ -54,7 +54,7 @@ void text_overlay::init(int width, int height, const char* font)
 
     static const char * fs_source[] =
     {
-        "#version 410 core\n"
+        "#version 440 core\n"
         "layout (origin_upper_left) in vec4 gl_FragCoord;\n"
         "layout (location = 0) out vec4 o_color;\n"
         "layout (binding = 0) uniform isampler2D text_buffer;\n"
@@ -96,7 +96,7 @@ void text_overlay::init(int width, int height, const char* font)
     glBindTexture(GL_TEXTURE_2D, text_buffer);
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_R8UI, width, height);
 
-    font_texture = sb7::ktx::file::load(font ? font : "media/textures/cp437_9x16.ktx");
+    font_texture = sb7::ktx::file::load(font ?  font : "media/textures/cp437_9x16.ktx");
 
     screen_buffer = new char[width * height];
     memset(screen_buffer, 0, width * height);

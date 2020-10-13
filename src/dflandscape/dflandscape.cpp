@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,9 +22,29 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include <sb7ktx.h>
 #include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+//using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class dflandscape_app : public sb7::application
 {
@@ -82,7 +102,7 @@ public:
 
         glClearBufferfv(GL_COLOR, 0, black);
 
-        float scale = (float)(cos(currentTime * 0.2) * sin(currentTime * 0.15) * 3.0 + 3.2);
+        float scale_f = (float)(cos(currentTime * 0.2) * sin(currentTime * 0.15) * 3.0 + 3.2);
         float cos_t = (float)cos(currentTime * 0.03) * 0.25f;
         float sin_t = (float)sin(currentTime * 0.02) * 0.25f;
 
@@ -95,12 +115,12 @@ public:
 
         float m2[] =
         {
-            cos_t * scale, sin_t * scale, 0.0f,
-            -sin_t * scale, cos_t * scale, 0.0f,
+            cos_t * scale_f, sin_t * scale_f, 0.0f,
+            -sin_t * scale_f, cos_t * scale_f, 0.0f,
             cos_t, sin_t, 1.0f
         };
 
-        vmath::mat4 transform;
+        mat4 transform;
         
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, map_texture);
@@ -109,16 +129,16 @@ public:
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, rocks_texture);
 
-        vmath::mat4 projection;
+        mat4 projection;
 
-        transform = vmath::translate(0.0f, 0.0f, -1.0f) *
-                    vmath::scale(10.0f, 10.0f, 1.0f);
+        transform = translate(identity<mat4>(), vec3(0.0f, 0.0f, -1.0f)) *
+                    scale(vec3(10.0f, 10.0f, 1.0f));
 
-        projection = vmath::frustum(-aspect, aspect, 1.0, -1.0, 1.0f, 100.0f);
+        projection = frustum(-aspect, aspect, 1.0f, -1.0f, 1.0f, 100.0f);
 
         glUseProgram(sdf_program);
         glUniformMatrix3fv(0, 1, GL_FALSE, m2);
-        glUniformMatrix4fv(1, 1, GL_FALSE, projection * transform);
+        glUniformMatrix4fv(1, 1, GL_FALSE, value_ptr(projection * transform));
         // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 1);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,45 +22,29 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
 
-static const char * square_vs_source[] =
-{
-    "#version 410 core                                                               \n"
-    "                                                                                \n"
-    "layout (location = 0) in vec4 position;                                         \n"
-    "layout (location = 1) in vec4 instance_color;                                   \n"
-    "layout (location = 2) in vec4 instance_position;                                \n"
-    "                                                                                \n"
-    "out Fragment                                                                    \n"
-    "{                                                                               \n"
-    "    vec4 color;                                                                 \n"
-    "} fragment;                                                                     \n"
-    "                                                                                \n"
-    "void main(void)                                                                 \n"
-    "{                                                                               \n"
-    "    gl_Position = (position + instance_position) * vec4(0.25, 0.25, 1.0, 1.0);    \n"
-    "    fragment.color = instance_color;                                            \n"
-    "}                                                                               \n"
-};
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
-static const char * square_fs_source[] =
-{
-    "#version 410 core                                                                \n"
-    "precision highp float;                                                           \n"
-    "                                                                                 \n"
-    "in Fragment                                                                      \n"
-    "{                                                                                \n"
-    "    vec4 color;                                                                  \n"
-    "} fragment;                                                                      \n"
-    "                                                                                 \n"
-    "out vec4 color;                                                                  \n"
-    "                                                                                 \n"
-    "void main(void)                                                                  \n"
-    "{                                                                                \n"
-    "    color = fragment.color;                                                      \n"
-    "}                                                                                \n"
-};
+#include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
 
 class instancing_app : public sb7::application
 {
@@ -125,18 +109,18 @@ public:
         glVertexAttribDivisor(1, 1);
         glVertexAttribDivisor(2, 1);
 
+        GLuint square_vs = sb7::shader::load("media/shaders/instancedattribs/instancedattribs.vs.glsl", GL_VERTEX_SHADER);
+        GLuint square_fs = sb7::shader::load("media/shaders/instancedattribs/instancedattribs.fs.glsl", GL_FRAGMENT_SHADER);
+
         square_program = glCreateProgram();
 
-        GLuint square_vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(square_vs, 1, square_vs_source, NULL);
-        glCompileShader(square_vs);
         glAttachShader(square_program, square_vs);
-        GLuint square_fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(square_fs, 1, square_fs_source, NULL);
-        glCompileShader(square_fs);
         glAttachShader(square_program, square_fs);
 
         glLinkProgram(square_program);
+
+        //proj_location = glGetUniformLocation(square_program, "project_matrix");
+
         glDeleteShader(square_vs);
         glDeleteShader(square_fs);
     }
@@ -150,10 +134,16 @@ public:
 
     void render(double t)
     {
+        glViewport(0, 0, info.windowWidth, info.windowHeight);
+
+        //mat4 project_matrix = perspective(radians(50.f), (float)info.windowWidth / info.windowHeight, 0.1f, 1000.f);
+
+
         static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
         glClearBufferfv(GL_COLOR, 0, black);
 
         glUseProgram(square_program);
+        //glUniformMatrix4fv(proj_location, 1, GL_FALSE, value_ptr(project_matrix));
         glBindVertexArray(square_vao);
         glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, 4);
     }
@@ -163,6 +153,7 @@ private:
     GLuint      square_vao;
 
     GLuint      square_program;
+    //GLint           proj_location;
 };
 
 DECLARE_MAIN(instancing_app);

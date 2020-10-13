@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,7 +22,27 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+#include <shader.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 // Remove this to draw only a single cube!
 // #define MANY_CUBES
@@ -40,95 +60,21 @@ class multiviewport_app : public sb7::application
 
     virtual void startup()
     {
-        static const char * vs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "in vec4 position;                                                  \n"
-            "                                                                   \n"
-            "out VS_OUT                                                         \n"
-            "{                                                                  \n"
-            "    vec4 color;                                                    \n"
-            "} vs_out;                                                          \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    gl_Position = position;                                        \n"
-            "    vs_out.color = position * 2.0 + vec4(0.5, 0.5, 0.5, 0.0);      \n"
-            "}                                                                  \n"
-        };
-
-        static const char * gs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "layout (triangles, invocations = 4) in;                            \n"
-            "layout (triangle_strip, max_vertices = 3) out;                     \n"
-            "                                                                   \n"
-            "layout (std140, binding = 0) uniform transform_block               \n"
-            "{                                                                  \n"
-            "    mat4 mvp_matrix[4];                                            \n"
-            "};                                                                 \n"
-            "                                                                   \n"
-            "in VS_OUT                                                          \n"
-            "{                                                                  \n"
-            "    vec4 color;                                                    \n"
-            "} gs_in[];                                                         \n"
-            "                                                                   \n"
-            "out GS_OUT                                                         \n"
-            "{                                                                  \n"
-            "    vec4 color;                                                    \n"
-            "} gs_out;                                                          \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    for (int i = 0; i < gl_in.length(); i++)                       \n"
-            "    {                                                              \n"
-            "        gs_out.color = gs_in[i].color;                             \n"
-            "        gl_Position = mvp_matrix[gl_InvocationID] *                \n"
-            "                      gl_in[i].gl_Position;                        \n"
-            "        gl_ViewportIndex = gl_InvocationID;                        \n"
-            "        EmitVertex();                                              \n"
-            "    }                                                              \n"
-            "    EndPrimitive();                                                \n"
-            "}                                                                  \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "out vec4 color;                                                    \n"
-            "                                                                   \n"
-            "in GS_OUT                                                          \n"
-            "{                                                                  \n"
-            "    vec4 color;                                                    \n"
-            "} fs_in;                                                           \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    color = fs_in.color;                                           \n"
-            "}                                                                  \n"
-        };
+        GLuint vs = sb7::shader::load("media/shaders/multiviewport/multiviewport.vs.glsl", GL_VERTEX_SHADER);
+        GLuint gs = sb7::shader::load("media/shaders/multiviewport/multiviewport.gs.glsl", GL_GEOMETRY_SHADER);
+        GLuint fs = sb7::shader::load("media/shaders/multiviewport/multiviewport.fs.glsl", GL_FRAGMENT_SHADER);
 
         program = glCreateProgram();
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
-        GLuint gs = glCreateShader(GL_GEOMETRY_SHADER);
-        glShaderSource(gs, 1, gs_source, NULL);
-        glCompileShader(gs);
-
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
+        
         glAttachShader(program, vs);
         glAttachShader(program, gs);
         glAttachShader(program, fs);
 
         glLinkProgram(program);
+
+        glDeleteShader(fs);
+        glDeleteShader(gs);
+        glDeleteShader(vs);
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
@@ -179,7 +125,7 @@ class multiviewport_app : public sb7::application
 
         glGenBuffers(1, &uniform_buffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
-        glBufferData(GL_UNIFORM_BUFFER, 4 * sizeof(vmath::mat4), NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, 4 * sizeof( mat4), NULL, GL_DYNAMIC_DRAW);
 
         glEnable(GL_CULL_FACE);
         // glFrontFace(GL_CW);
@@ -221,7 +167,7 @@ class multiviewport_app : public sb7::application
                            info.windowHeight - viewport_height,
                            viewport_width, viewport_height);
 
-        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+         mat4 proj_matrix =  perspective(radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      1000.0f);
@@ -229,17 +175,17 @@ class multiviewport_app : public sb7::application
         float f = (float)currentTime * 0.3f;
 
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniform_buffer);
-        vmath::mat4 * mv_matrix_array = (vmath::mat4 *)glMapBufferRange(GL_UNIFORM_BUFFER,
+         mat4 * mv_matrix_array = ( mat4 *)glMapBufferRange(GL_UNIFORM_BUFFER,
                                                                         0,
-                                                                        4 * sizeof(vmath::mat4),
+                                                                        4 * sizeof( mat4),
                                                                         GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
         for (i = 0; i < 4; i++)
         {
             mv_matrix_array[i] = proj_matrix *
-                                 vmath::translate(0.0f, 0.0f, -2.0f) *
-                                 vmath::rotate((float)currentTime * 45.0f * (float)(i + 1), 0.0f, 1.0f, 0.0f) *
-                                 vmath::rotate((float)currentTime * 81.0f * (float)(i + 1), 1.0f, 0.0f, 0.0f);
+                                  translate(vec3(0.0f, 0.0f, -2.0f)) *
+                                  rotate(radians((float)currentTime * 45.0f * (float)(i + 1)), vec3(0.0f, 1.0f, 0.0f)) *
+                                  rotate(radians((float)currentTime * 81.0f * (float)(i + 1)), vec3(1.0f, 0.0f, 0.0f));
         }
 
         glUnmapBuffer(GL_UNIFORM_BUFFER);

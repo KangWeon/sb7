@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright¢â 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,7 +23,28 @@
 
 #include <sb7.h>
 #include <sb7ktx.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+#include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+//using glm::vec4;
+
+using glm::perspective;
+//using glm::lookAt;
+//using glm::frustum;
+
+//using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class tunnel_app : public sb7::application
 {
@@ -38,63 +59,8 @@ class tunnel_app : public sb7::application
 
     void startup()
     {
-        GLuint  vs, fs;
-
-        static const char * vs_source[] =
-        {
-            "#version 420 core                                                      \n"
-            "                                                                       \n"
-            "out VS_OUT                                                             \n"
-            "{                                                                      \n"
-            "    vec2 tc;                                                           \n"
-            "} vs_out;                                                              \n"
-            "                                                                       \n"
-            "uniform mat4 mvp;                                                      \n"
-            "uniform float offset;                                                  \n"
-            "                                                                       \n"
-            "void main(void)                                                        \n"
-            "{                                                                      \n"
-            "    const vec2[4] position = vec2[4](vec2(-0.5, -0.5),                 \n"
-            "                                     vec2( 0.5, -0.5),                 \n"
-            "                                     vec2(-0.5,  0.5),                 \n"
-            "                                     vec2( 0.5,  0.5));                \n"
-            "    vs_out.tc = (position[gl_VertexID].xy + vec2(offset, 0.5)) * vec2(30.0, 1.0);                  \n"
-            "    gl_Position = mvp * vec4(position[gl_VertexID], 0.0, 1.0);       \n"
-            "}                                                                      \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 420 core                                                      \n"
-            "                                                                       \n"
-            "layout (location = 0) out vec4 color;                                  \n"
-            "                                                                       \n"
-            "in VS_OUT                                                              \n"
-            "{                                                                      \n"
-            "    vec2 tc;                                                           \n"
-            "} fs_in;                                                               \n"
-            "                                                                       \n"
-            "layout (binding = 0) uniform sampler2D tex;                            \n"
-            "                                                                       \n"
-            "void main(void)                                                        \n"
-            "{                                                                      \n"
-            "    color = texture(tex, fs_in.tc);                                    \n"
-            "}                                                                      \n"
-        };
-
-        char buffer[1024];
-
-        vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
-        glGetShaderInfoLog(vs, 1024, NULL, buffer);
-
-        fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
-        glGetShaderInfoLog(vs, 1024, NULL, buffer);
+        GLuint  vs = sb7::shader::load("media/shaders/tunnel/tunnel.vs.glsl", GL_VERTEX_SHADER);
+        GLuint  fs = sb7::shader::load("media/shaders/tunnel/tunnel.fs.glsl", GL_FRAGMENT_SHADER);
 
         render_prog = glCreateProgram();
         glAttachShader(render_prog, vs);
@@ -103,8 +69,6 @@ class tunnel_app : public sb7::application
 
         glDeleteShader(vs);
         glDeleteShader(fs);
-
-        glGetProgramInfoLog(render_prog, 1024, NULL, buffer);
 
         uniforms.mvp = glGetUniformLocation(render_prog, "mvp");
         uniforms.offset = glGetUniformLocation(render_prog, "offset");
@@ -139,7 +103,7 @@ class tunnel_app : public sb7::application
 
         glUseProgram(render_prog);
 
-        vmath::mat4 proj_matrix = vmath::perspective(60.0f,
+         mat4 proj_matrix =  perspective(radians(60.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f, 100.0f);
 
@@ -149,13 +113,13 @@ class tunnel_app : public sb7::application
         GLuint textures[] = { tex_wall, tex_floor, tex_wall, tex_ceiling };
         for (i = 0; i < 4; i++)
         {
-            vmath::mat4 mv_matrix = vmath::rotate(90.0f * (float)i, vmath::vec3(0.0f, 0.0f, 1.0f)) *
-                                    vmath::translate(-0.5f, 0.0f, -10.0f) *
-                                    vmath::rotate(90.0f, 0.0f, 1.0f, 0.0f) *
-                                    vmath::scale(30.0f, 1.0f, 1.0f);
-            vmath::mat4 mvp = proj_matrix * mv_matrix;
+             mat4 mv_matrix =  rotate(radians(90.0f * (float)i),  vec3(0.0f, 0.0f, 1.0f)) *
+                                     translate(vec3(-0.5f, 0.0f, -10.0f)) *
+                                     rotate(radians(90.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                                     scale(vec3(30.0f, 1.0f, 1.0f));
+             mat4 mvp = proj_matrix * mv_matrix;
 
-            glUniformMatrix4fv(uniforms.mvp, 1, GL_FALSE, mvp);
+            glUniformMatrix4fv(uniforms.mvp, 1, GL_FALSE, value_ptr(mvp));
 
             glBindTexture(GL_TEXTURE_2D, textures[i]);
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

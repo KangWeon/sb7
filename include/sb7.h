@@ -138,7 +138,7 @@ public:
         //  gl3wInit();
         if (!gladLoadGL()) {
             fprintf(stderr, "Failed to load opengl functions!\n");
-            return EXIT_FAILURE;
+            return;
         }
 
 #ifdef _DEBUG

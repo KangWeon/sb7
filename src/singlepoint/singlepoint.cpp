@@ -37,44 +37,13 @@ class singlepoint_app : public sb7::application
 
     virtual void startup()
     {
-        GLuint vs;
-        GLuint fs;
-
-        vs = sb7::shader::load("media/shaders/singlepoint/singlepoint.vs.glsl", GL_VERTEX_SHADER);
-        fs = sb7::shader::load("media/shaders/singlepoint/singlepoint.fs.glsl", GL_FRAGMENT_SHADER);
-        //        static const char * vs_source[] =
-        //        {
-        //            "#version 420 core                             \n"
-        //            "                                              \n"
-        //            "void main(void)                               \n"
-        //            "{                                             \n"
-        //            "    gl_Position = vec4(0.0, 0.0, 0.0, 1.0);   \n"
-        //            "}                                             \n"
-        //        };
-        //
-        //        static const char * fs_source[] =
-        //        {
-        //            "#version 420 core                             \n"
-        //            "                                              \n"
-        //            "out vec4 color;                               \n"
-        //            "                                              \n"
-        //            "void main(void)                               \n"
-        //            "{                                             \n"
-        //            "    color = vec4(0.0, 0.8, 1.0, 1.0);         \n"
-        //            "}                                             \n"
-        //        };
+        GLuint vs = sb7::shader::load("media/shaders/singlepoint/singlepoint.vs.glsl", GL_VERTEX_SHADER);
+        GLuint fs = sb7::shader::load("media/shaders/singlepoint/singlepoint.fs.glsl", GL_FRAGMENT_SHADER);
         
         if (program)
             glDeleteProgram(program);
 
         program = glCreateProgram();
-        //        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        //        glShaderSource(fs, 1, fs_source, NULL);
-        //        glCompileShader(fs);
-        //
-        //        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        //        glShaderSource(vs, 1, vs_source, NULL);
-        //        glCompileShader(vs);
 
         glAttachShader(program, vs);
         glAttachShader(program, fs);

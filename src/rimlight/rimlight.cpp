@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,11 +22,31 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <object.h>
 #include <sb7ktx.h>
 #include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
 
 class rimlight_app : public sb7::application
 {
@@ -38,7 +58,7 @@ public:
           rim_power(2.5f),
           rim_enable(true)
     {
-        mat_rotation = vmath::mat4::identity();
+        mat_rotation = identity<mat4>();
     }
 
 protected:
@@ -84,18 +104,18 @@ protected:
 
         glUseProgram(program);
 
-        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+         mat4 proj_matrix =  perspective(radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      1000.0f);
-        glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, proj_matrix);
+        glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, value_ptr(proj_matrix));
 
-        vmath::mat4 mv_matrix = vmath::translate(0.0f, -5.0f, -20.0f) *
-                                vmath::rotate(f * 5.0f, 0.0f, 1.0f, 0.0f) *
-                                vmath::mat4::identity();
-        glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, mv_matrix);
-
-        glUniform3fv(uniforms.rim_color, 1, rim_enable ? rim_color : vmath::vec3(0.0f));
+         mat4 mv_matrix =  translate(vec3(0.0f, -5.0f, -20.0f)) *
+                                 rotate(radians(f * 5.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                                 identity<mat4>();
+        glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, value_ptr(mv_matrix));
+        vec3 rim_c = rim_enable ? rim_color : vec3(0.0f);
+        glUniform3fv(uniforms.rim_color, 1, value_ptr(rim_c));
         glUniform1f(uniforms.rim_power, rim_power);
 
         object.render();
@@ -185,11 +205,11 @@ private:
         GLint           rim_power;
     } uniforms;
 
-    vmath::mat4         mat_rotation;
+     mat4         mat_rotation;
 
     sb7::object         object;
     bool                paused;
-    vmath::vec3         rim_color;
+     vec3         rim_color;
     float               rim_power;
     bool                rim_enable;
 };

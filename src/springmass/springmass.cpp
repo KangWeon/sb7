@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright¢â 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,8 +22,29 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+using glm::ivec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 enum BUFFER_TYPE_t
 {
@@ -70,9 +91,9 @@ public:
 
         load_shaders();
 
-        vmath::vec4 * initial_positions = new vmath::vec4 [POINTS_TOTAL];
-        vmath::vec3 * initial_velocities = new vmath::vec3 [POINTS_TOTAL];
-        vmath::ivec4 * connection_vectors = new vmath::ivec4 [POINTS_TOTAL];
+         vec4 * initial_positions = new  vec4 [POINTS_TOTAL];
+         vec3 * initial_velocities = new  vec3 [POINTS_TOTAL];
+         ivec4 * connection_vectors = new  ivec4 [POINTS_TOTAL];
 
         int n = 0;
 
@@ -81,13 +102,13 @@ public:
             for (i = 0; i < POINTS_X; i++) {
                 float fi = (float)i / (float)POINTS_X;
 
-                initial_positions[n] = vmath::vec4((fi - 0.5f) * (float)POINTS_X,
+                initial_positions[n] =  vec4((fi - 0.5f) * (float)POINTS_X,
                                                    (fj - 0.5f) * (float)POINTS_Y,
                                                    0.6f * sinf(fi) * cosf(fj),
                                                    1.0f);
-                initial_velocities[n] = vmath::vec3(0.0f);
+                initial_velocities[n] =  vec3(0.0f);
 
-                connection_vectors[n] = vmath::ivec4(-1);
+                connection_vectors[n] =  ivec4(-1);
 
                 if (j != (POINTS_Y - 1))
                 {
@@ -114,17 +135,17 @@ public:
             glBindVertexArray(m_vao[i]);
 
             glBindBuffer(GL_ARRAY_BUFFER, m_vbo[POSITION_A + i]);
-            glBufferData(GL_ARRAY_BUFFER, POINTS_TOTAL * sizeof(vmath::vec4), initial_positions, GL_DYNAMIC_COPY);
+            glBufferData(GL_ARRAY_BUFFER, POINTS_TOTAL * sizeof( vec4), initial_positions, GL_DYNAMIC_COPY);
             glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
             glEnableVertexAttribArray(0);
 
             glBindBuffer(GL_ARRAY_BUFFER, m_vbo[VELOCITY_A + i]);
-            glBufferData(GL_ARRAY_BUFFER, POINTS_TOTAL * sizeof(vmath::vec3), initial_velocities, GL_DYNAMIC_COPY);
+            glBufferData(GL_ARRAY_BUFFER, POINTS_TOTAL * sizeof( vec3), initial_velocities, GL_DYNAMIC_COPY);
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
             glEnableVertexAttribArray(1);
 
             glBindBuffer(GL_ARRAY_BUFFER, m_vbo[CONNECTION]);
-            glBufferData(GL_ARRAY_BUFFER, POINTS_TOTAL * sizeof(vmath::ivec4), connection_vectors, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, POINTS_TOTAL * sizeof( ivec4), connection_vectors, GL_STATIC_DRAW);
             glVertexAttribIPointer(2, 4, GL_INT, 0, NULL);
             glEnableVertexAttribArray(2);
         }
@@ -143,9 +164,9 @@ public:
 
         glGenBuffers(1, &m_index_buffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, lines * 2 * sizeof(int), NULL, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, (lines * 2) * sizeof(int), NULL, GL_STATIC_DRAW);
 
-        int * e = (int *)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, lines * 2 * sizeof(int), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+        int * e = (int *)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, (lines * 2) * sizeof(int), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
         for (j = 0; j < POINTS_Y; j++)  
         {

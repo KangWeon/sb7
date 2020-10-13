@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2013 Graham Sellers
+ * Copyright ï¿½ 2012-2013 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -21,117 +21,69 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include <sb6.h>
-#include <vmath.h>
+#include <sb7.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <object.h>
-#include <sb6ktx.h>
+#include <sb7ktx.h>
 #include <shader.h>
 #include <arcball.h>
 
-class sb6mrender_app : public sb6::application
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
+
+class sb7mrender_app : public sb7::application
 {
 public:
-    sb6mrender_app()
+    sb7mrender_app()
         : mouseDown(false)
     {
-        mat_rotation = vmath::mat4::identity();
+        mat_rotation = identity<mat4>();
     }
 
 protected:
     void init()
     {
-        static const char title[] = "OpenGL SuperBible - SB6 Model Rendering";
+        static const char title[] = "OpenGL SuperBible - sb6 Model Rendering";
 
-        sb6::application::init();
+        sb7::application::init();
 
         memcpy(info.title, title, sizeof(title));
     }
 
     virtual void startup()
     {
-        /*
-        static const char * vs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "layout (location = 0) in vec4 position;                            \n"
-            "layout (location = 1) in vec3 normal;                              \n"
-            "layout (location = 2) in vec3 tangent;                             \n"
-            "layout (location = 4) in vec2 texcoord;                            \n"
-            "                                                                   \n"
-            "out VS_OUT                                                         \n"
-            "{                                                                  \n"
-            "    vec3 normal;                                                   \n"
-            "    vec4 color;                                                    \n"
-            "    vec2 texcoord;                                                 \n"
-            "    vec3 tangent;                                                  \n"
-            "} vs_out;                                                          \n"
-            "                                                                   \n"
-            "uniform mat4 mv_matrix;                                            \n"
-            "uniform mat4 proj_matrix;                                          \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    gl_Position = proj_matrix * mv_matrix * position;              \n"
-            "    vs_out.color = position * 2.0 + vec4(0.5, 0.5, 0.5, 0.0);      \n"
-            "    vs_out.normal = mat3(mv_matrix) * normal;                      \n"
-            "    vs_out.texcoord = texcoord;                                    \n"
-            "    vs_out.tangent = tangent;                                      \n"
-            "}                                                                  \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "out vec4 color;                                                    \n"
-            "                                                                   \n"
-            "uniform sampler2D tex_color;                                       \n"
-            "                                                                   \n"
-            "in VS_OUT                                                          \n"
-            "{                                                                  \n"
-            "    vec3 normal;                                                   \n"
-            "    vec4 color;                                                    \n"
-            "    vec2 texcoord;                                                 \n"
-            "    vec3 tangent;                                                  \n"
-            "} fs_in;                                                           \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            // "    color = abs(fs_in.normal).z * vec4(fs_in.texcoord, 0.0, 1.0);        \n"
-            "    color = texture(tex_color, fs_in.texcoord);                    \n"
-            "}                                                                  \n"
-        };
-
-        program = glCreateProgram();
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
-        glAttachShader(program, vs);
-        glAttachShader(program, fs);
-
-        glLinkProgram(program);
-        */
-
+        
         loadShaders();
-
-        object.load("media/objects/ladybug.sbm");
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
 
+        object.load("media/objects/ladybug.sbm");
+
         glGenTextures(1, &tex_color);
         glGenTextures(1, &tex_normal);
         glActiveTexture(GL_TEXTURE0);
-        sb6::ktx::file::load("media/textures/ladybug_co.ktx", tex_color);
+        sb7::ktx::file::load("media/textures/ladybug_co.ktx", tex_color);
         glActiveTexture(GL_TEXTURE1);
-        sb6::ktx::file::load("media/textures/ladybug_nm.ktx", tex_normal);
+        sb7::ktx::file::load("media/textures/ladybug_nm.ktx", tex_normal);
     }
 
     virtual void render(double currentTime)
@@ -146,16 +98,15 @@ protected:
 
         glUseProgram(program);
 
-        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+        mat4 proj_matrix = perspective(radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      1000.0f);
-        glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+        glUniformMatrix4fv(proj_location, 1, GL_FALSE, value_ptr(proj_matrix));
 
-        vmath::mat4 mv_matrix = vmath::translate(0.0f, -0.5f, -7.0f) *
-                                vmath::rotate((float)currentTime * 5.0f, 0.0f, 1.0f, 0.0f) *
-                                vmath::mat4::identity();
-        glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+        mat4 mv_matrix = translate(identity<mat4>(), vec3(0.0f, -0.5f, -7.0f)) *
+            rotate(identity<mat4>(), radians((float)currentTime * 5.0f), vec3(0.0f, 1.0f, 0.0f));
+        glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
 
         object.render();
     }
@@ -194,7 +145,7 @@ protected:
 
     void onResize(int w, int h)
     {
-        sb6::application::onResize(w, h);
+        sb7::application::onResize(w, h);
 
         arcball.setDimensions(float(w), float(h));
     }
@@ -217,8 +168,8 @@ protected:
         GLuint vs;
         GLuint fs;
 
-        vs = sb6::shader::load("media/shaders/sb6mrender/render.vs.glsl", GL_VERTEX_SHADER);
-        fs = sb6::shader::load("media/shaders/sb6mrender/render.fs.glsl", GL_FRAGMENT_SHADER);
+        vs = sb7::shader::load("media/shaders/sb6mrender/render.vs.glsl", GL_VERTEX_SHADER);
+        fs = sb7::shader::load("media/shaders/sb6mrender/render.fs.glsl", GL_FRAGMENT_SHADER);
 
         if (program != 0)
             glDeleteProgram(program);
@@ -240,13 +191,13 @@ private:
     GLint           mv_location;
     GLint           proj_location;
 
-    vmath::mat4         mat_rotation;
+    mat4         mat_rotation;
 
     GLuint              tex_color;
     GLuint              tex_normal;
-    sb6::object         object;
-    sb6::utils::arcball arcball;
+    sb7::object         object;
+    sb7::utils::arcball arcball;
     bool                mouseDown;
 };
 
-DECLARE_MAIN(sb6mrender_app)
+DECLARE_MAIN(sb7mrender_app)

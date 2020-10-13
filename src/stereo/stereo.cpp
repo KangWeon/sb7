@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright¢â 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,11 +22,30 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
 
 #include <object.h>
 #include <sb7ktx.h>
 #include <shader.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 #define DEPTH_TEXTURE_SIZE      4096
 #define FRUSTUM_DEPTH           1000
@@ -76,14 +95,14 @@ protected:
     struct
     {
         sb7::object     obj;
-        vmath::mat4     model_matrix;
+        mat4     model_matrix;
     } objects[OBJECT_COUNT];
 
-    vmath::mat4     light_view_matrix;
-    vmath::mat4     light_proj_matrix;
+    mat4     light_view_matrix;
+    mat4     light_proj_matrix;
 
-    vmath::mat4     camera_view_matrix[2];
-    vmath::mat4     camera_proj_matrix;
+    mat4     camera_view_matrix[2];
+    mat4     camera_proj_matrix;
 
     GLuint          quad_vao;
 
@@ -151,43 +170,43 @@ void stereo_app::render(double currentTime)
 
     const float f = (float)total_time + 30.0f;
 
-    vmath::vec3 light_position = vmath::vec3(20.0f, 20.0f, 20.0f);
-    vmath::vec3 view_position = vmath::vec3(0.0f, 0.0f, 40.0f);
+    vec3 light_position = vec3(20.0f, 20.0f, 20.0f);
+    vec3 view_position = vec3(0.0f, 0.0f, 40.0f);
 
-    light_proj_matrix = vmath::frustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 200.0f);
-    light_view_matrix = vmath::lookat(light_position,
-                                      vmath::vec3(0.0f), vmath::vec3(0.0f, 1.0f, 0.0f));
+    light_proj_matrix = frustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 200.0f);
+    light_view_matrix = lookAt(light_position,
+                                      vec3(0.0f), vec3(0.0f, 1.0f, 0.0f));
 
-    camera_proj_matrix = vmath::perspective(50.0f,
+    camera_proj_matrix = perspective(radians(50.0f),
                                             (float)info.windowWidth / (float)info.windowHeight,
                                             1.0f,
                                             200.0f);
 
-    camera_view_matrix[0] = vmath::lookat(view_position - vmath::vec3(separation, 0.0f, 0.0f),
-                                          vmath::vec3(0.0f, 0.0f, -50.0f),
-                                          vmath::vec3(0.0f, 1.0f, 0.0f));
+    camera_view_matrix[0] = lookAt(view_position - vec3(separation, 0.0f, 0.0f),
+                                          vec3(0.0f, 0.0f, -50.0f),
+                                          vec3(0.0f, 1.0f, 0.0f));
 
-    camera_view_matrix[1] = vmath::lookat(view_position + vmath::vec3(separation, 0.0f, 0.0f),
-                                          vmath::vec3(0.0f, 0.0f, -50.0f),
-                                          vmath::vec3(0.0f, 1.0f, 0.0f));
+    camera_view_matrix[1] = lookAt(view_position + vec3(separation, 0.0f, 0.0f),
+                                          vec3(0.0f, 0.0f, -50.0f),
+                                          vec3(0.0f, 1.0f, 0.0f));
 
-    objects[0].model_matrix = vmath::rotate(f * 14.5f, 0.0f, 1.0f, 0.0f) *
-                              vmath::rotate(20.0f, 1.0f, 0.0f, 0.0f) *
-                              vmath::translate(0.0f, -4.0f, 0.0f);
+    objects[0].model_matrix = rotate(radians(f * 14.5f), vec3(0.0f, 1.0f, 0.0f)) *
+                              rotate(radians(20.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                              translate(vec3(0.0f, -4.0f, 0.0f));
 
-    objects[1].model_matrix = vmath::rotate(f * 3.7f, 0.0f, 1.0f, 0.0f) *
-                              vmath::translate(sinf(f * 0.37f) * 12.0f, cosf(f * 0.37f) * 12.0f, 0.0f) *
-                              vmath::scale(2.0f);
+    objects[1].model_matrix = rotate(radians(f * 3.7f), vec3(0.0f, 1.0f, 0.0f)) *
+                              translate(vec3(sinf(f * 0.37f) * 12.0f, cosf(f * 0.37f) * 12.0f, 0.0f)) *
+                              scale(vec3(2.0f));
 
-    objects[2].model_matrix = vmath::rotate(f * 6.45f, 0.0f, 1.0f, 0.0f) *
-                              vmath::translate(sinf(f * 0.25f) * 10.0f, cosf(f * 0.25f) * 10.0f, 0.0f) *
-                              vmath::rotate(f * 99.0f, 0.0f, 0.0f, 1.0f) *
-                              vmath::scale(2.0f);
+    objects[2].model_matrix = rotate(radians(f * 6.45f), vec3(0.0f, 1.0f, 0.0f)) *
+                              translate(vec3(sinf(f * 0.25f) * 10.0f, cosf(f * 0.25f) * 10.0f, 0.0f)) *
+                              rotate(radians(f * 99.0f), vec3(0.0f, 0.0f, 1.0f)) *
+                              scale(vec3(2.0f));
 
-    objects[3].model_matrix = vmath::rotate(f * 5.25f, 0.0f, 1.0f, 0.0f) *
-                              vmath::translate(sinf(f * 0.51f) * 14.0f, cosf(f * 0.51f) * 14.0f, 0.0f) *
-                              vmath::rotate(f * 120.3f, 0.707106f, 0.0f, 0.707106f) *
-                              vmath::scale(2.0f);
+    objects[3].model_matrix = rotate(radians(f * 5.25f), vec3(0.0f, 1.0f, 0.0f)) *
+                              translate(vec3(sinf(f * 0.51f) * 14.0f, cosf(f * 0.51f) * 14.0f, 0.0f)) *
+                              rotate(radians(f * 120.3f), vec3(0.707106f, 0.0f, 0.707106f)) *
+                              scale(vec3(2.0f));
 
     glEnable(GL_DEPTH_TEST);
 
@@ -199,28 +218,28 @@ void stereo_app::render_scene(double currentTime)
     static const GLfloat ones[] = { 1.0f };
     static const GLfloat zero[] = { 0.0f };
     static const GLfloat gray[] = { 0.1f, 0.1f, 0.1f, 0.0f };
-    static const vmath::mat4 scale_bias_matrix = vmath::mat4(vmath::vec4(0.5f, 0.0f, 0.0f, 0.0f),
-                                                             vmath::vec4(0.0f, 0.5f, 0.0f, 0.0f),
-                                                             vmath::vec4(0.0f, 0.0f, 0.5f, 0.0f),
-                                                             vmath::vec4(0.5f, 0.5f, 0.5f, 1.0f));
-    vmath::mat4 light_vp_matrix = light_proj_matrix * light_view_matrix;
-    vmath::mat4 shadow_sbpv_matrix = scale_bias_matrix * light_proj_matrix * light_view_matrix;
+    static const mat4 scale_bias_matrix = mat4(vec4(0.5f, 0.0f, 0.0f, 0.0f),
+                                                             vec4(0.0f, 0.5f, 0.0f, 0.0f),
+                                                             vec4(0.0f, 0.0f, 0.5f, 0.0f),
+                                                             vec4(0.5f, 0.5f, 0.5f, 1.0f));
+    mat4 light_vp_matrix = light_proj_matrix * light_view_matrix;
+    mat4 shadow_sbpv_matrix = scale_bias_matrix * light_proj_matrix * light_view_matrix;
 
     glViewport(0, 0, info.windowWidth, info.windowHeight);
     glClearBufferfv(GL_COLOR, 0, gray);
     glUseProgram(view_program);
     glActiveTexture(GL_TEXTURE0);
-    glUniformMatrix4fv(uniforms.view.proj_matrix, 1, GL_FALSE, camera_proj_matrix);
+    glUniformMatrix4fv(uniforms.view.proj_matrix, 1, GL_FALSE, value_ptr(camera_proj_matrix));
     glDrawBuffer(GL_BACK);
 
     int i, j;
 
-    static const vmath::vec3 diffuse_colors[] =
+    static const vec3 diffuse_colors[] =
     {
-        vmath::vec3(1.0f, 0.6f, 0.3f),
-        vmath::vec3(0.2f, 0.8f, 0.9f),
-        vmath::vec3(0.3f, 0.9f, 0.4f),
-        vmath::vec3(0.5f, 0.2f, 1.0f)
+        vec3(1.0f, 0.6f, 0.3f),
+        vec3(0.2f, 0.8f, 0.9f),
+        vec3(0.3f, 0.9f, 0.4f),
+        vec3(0.5f, 0.2f, 1.0f)
     };
 
     for (j = 0; j < 2; j++)
@@ -231,12 +250,12 @@ void stereo_app::render_scene(double currentTime)
         glClearBufferfv(GL_DEPTH, 0, ones);
         for (i = 0; i < 4; i++)
         {
-            vmath::mat4& model_matrix = objects[i].model_matrix;
-            vmath::mat4 shadow_matrix = shadow_sbpv_matrix * model_matrix;
-            glUniformMatrix4fv(uniforms.view.shadow_matrix, 1, GL_FALSE, shadow_matrix);
-            glUniformMatrix4fv(uniforms.view.mv_matrix, 1, GL_FALSE, camera_view_matrix[j] * objects[i].model_matrix);
-            glUniform1i(uniforms.view.full_shading, mode == RENDER_FULL ? 1 : 0);
-            glUniform3fv(uniforms.view.diffuse_albedo, 1, diffuse_colors[i]);
+            mat4& model_matrix = objects[i].model_matrix;
+            mat4 shadow_matrix = shadow_sbpv_matrix * model_matrix;
+            glUniformMatrix4fv(uniforms.view.shadow_matrix, 1, GL_FALSE, value_ptr(shadow_matrix));
+            glUniformMatrix4fv(uniforms.view.mv_matrix, 1, GL_FALSE, value_ptr(camera_view_matrix[j] * objects[i].model_matrix));
+            glUniform1i(uniforms.view.full_shading, mode == RENDER_FULL ?  1 : 0);
+            glUniform3fv(uniforms.view.diffuse_albedo, 1, value_ptr(diffuse_colors[i]));
             objects[i].obj.render();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,8 +23,10 @@
 
 #include <sb7.h>
 
+#include <shader.h>
+
 // Undefine this to take color from screen space
-#define INTERPOLATE_COLOR
+//#define INTERPOLATE_COLOR 
 
 class colorfromposition_app : public sb7::application
 {
@@ -39,82 +41,25 @@ class colorfromposition_app : public sb7::application
 
     virtual void startup()
     {
+        GLuint vs, fs;
+
 #ifndef INTERPOLATE_COLOR
-        static const char * vs_source[] =
-        {
-            "#version 420 core                                                          \n"
-            "                                                                           \n"
-            "void main(void)                                                            \n"
-            "{                                                                          \n"
-            "    const vec4 vertices[] = vec4[](vec4( 0.25, -0.25, 0.5, 1.0),           \n"
-            "                                   vec4(-0.25, -0.25, 0.5, 1.0),           \n"
-            "                                   vec4( 0.25,  0.25, 0.5, 1.0));          \n"
-            "                                                                           \n"
-            "    gl_Position = vertices[gl_VertexID];                                   \n"
-            "}                                                                          \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 420 core                                                          \n"
-            "                                                                           \n"
-            "out vec4 color;                                                            \n"
-            "                                                                           \n"
-            "void main(void)                                                            \n"
-            "{                                                                          \n"
-            "    color = vec4(sin(gl_FragCoord.x * 0.25) * 0.5 + 0.5,                   \n"
-            "                 cos(gl_FragCoord.y * 0.25) * 0.5 + 0.5,                   \n"
-            "                 sin(gl_FragCoord.x * 0.15) * cos(gl_FragCoord.y * 0.1),  \n"
-            "                 1.0);                                                     \n"
-            "}                                                                          \n"
-        };
+        vs = sb7::shader::load("media/shaders/fragcolorfrompos/fragcolorfrompos_not_inter.vs.glsl", GL_VERTEX_SHADER);
+        fs = sb7::shader::load("media/shaders/fragcolorfrompos/fragcolorfrompos_not_inter.fs.glsl", GL_FRAGMENT_SHADER);
 #else
-        static const char * vs_source[] =
-        {
-            "#version 420 core                                                          \n"
-            "                                                                           \n"
-            "out vec4 vs_color; \n"
-            "void main(void)                                                            \n"
-            "{                                                                          \n"
-            "    const vec4 vertices[] = vec4[](vec4( 0.25, -0.25, 0.5, 1.0),           \n"
-            "                                   vec4(-0.25, -0.25, 0.5, 1.0),           \n"
-            "                                   vec4( 0.25,  0.25, 0.5, 1.0));          \n"
-            "    const vec4 colors[] = vec4[](vec4(1.0, 0.0, 0.0, 1.0),                 \n"
-            "                                 vec4(0.0, 1.0, 0.0, 1.0),                 \n"
-            "                                 vec4(0.0, 0.0, 1.0, 1.0));                \n"
-            "                                                                           \n"
-            "    gl_Position = vertices[gl_VertexID];                                   \n"
-            "    vs_color = colors[gl_VertexID];                                        \n"
-            "}                                                                          \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 420 core                                                          \n"
-            "                                                                           \n"
-            "in vec4 vs_color;                                                          \n"
-            "out vec4 color;                                                            \n"
-            "                                                                           \n"
-            "void main(void)                                                            \n"
-            "{                                                                          \n"
-            "    color = vs_color;                                                      \n"
-            "}                                                                          \n"
-        };
+        vs = sb7::shader::load("media/shaders/fragcolorfrompos/fragcolorfrompos_inter.vs.glsl", GL_VERTEX_SHADER);
+        fs = sb7::shader::load("media/shaders/fragcolorfrompos/fragcolorfrompos_inter.fs.glsl", GL_FRAGMENT_SHADER);
 #endif
 
         program = glCreateProgram();
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
+        
         glAttachShader(program, vs);
         glAttachShader(program, fs);
 
         glLinkProgram(program);
+
+        glDeleteShader(vs);
+        glDeleteShader(fs);
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);

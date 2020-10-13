@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,9 +23,28 @@
 
 #include <sb7.h>
 #include <shader.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <sb7color.h>
 #include <object.h>
+
+using glm::mat4;
+using glm::vec3;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class bindlesstex_app : public sb7::application
 {
@@ -81,9 +100,9 @@ protected:
     
     struct MATRICES
     {
-        vmath::mat4     view;
-        vmath::mat4     projection;
-        vmath::mat4     model[NUM_TEXTURES];
+        mat4     view;
+        mat4     projection;
+        mat4     model[NUM_TEXTURES];
     };
 
     sb7::object     object;
@@ -173,12 +192,12 @@ void bindlesstex_app::render(double currentTime)
 
     int i;
 
-    vmath::mat4 proj_matrix = vmath::perspective(70.0f,
+    mat4 proj_matrix = perspective(radians(70.0f),
                                                  (float)info.windowWidth / (float)info.windowHeight,
                                                  0.1f, 500.0f);
 
     glViewport(0, 0, info.windowWidth, info.windowHeight);
-    glClearBufferfv(GL_COLOR, 0, sb7::color::Black);
+    glClearBufferfv(GL_COLOR, 0, value_ptr(sb7::color::Black));
     glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
 
     glFinish();
@@ -186,7 +205,7 @@ void bindlesstex_app::render(double currentTime)
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, buffers.transformBuffer);
     MATRICES* pMatrices = (MATRICES*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(MATRICES), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
-    pMatrices->view = vmath::translate(0.0f, 0.0f, -80.0f);
+    pMatrices->view = translate(identity<mat4>(), vec3(0.0f, 0.0f, -80.0f));
     pMatrices->projection = proj_matrix;
 
     float angle = f;
@@ -194,9 +213,9 @@ void bindlesstex_app::render(double currentTime)
     float angle3 = 0.1f * f;
     for (i = 0; i < NUM_TEXTURES; i++)
     {
-        pMatrices->model[i] = vmath::translate(float(i % 32) * 4.0f - 62.0f, float(i >> 5) * 6.0f - 33.0f, 15.0f * sinf(angle * 0.19f) + 3.0f * cosf(angle2 * 6.26f) + 40.0f * sinf(angle3)) *
-                              vmath::rotate(angle * 130.0f, 1.0f, 0.0f, 0.0f) *
-                              vmath::rotate(angle * 140.0f, 0.0f, 0.0f, 1.0f);
+        pMatrices->model[i] = translate(identity<mat4>(), vec3(float(i % 32) * 4.0f - 62.0f, float(i >> 5) * 6.0f - 33.0f, 15.0f * sinf(angle * 0.19f) + 3.0f * cosf(angle2 * 6.26f) + 40.0f * sinf(angle3))) *
+                              rotate(identity<mat4>(), radians(angle * 130.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                              rotate(identity<mat4>(), radians(angle * 140.0f), vec3(0.0f, 0.0f, 1.0f));
         angle += 1.0f;
         angle2 += 4.1f;
         angle3 += 0.01f;

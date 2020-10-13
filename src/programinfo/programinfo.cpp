@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -26,6 +26,8 @@
 
 #include <cstdio>
 #include <cstring>
+
+#include <shader.h>
 
 static const struct type_to_name_entry
 {
@@ -81,70 +83,22 @@ class programinfo_app : public sb7::application
 
     void startup()
     {
-        static const char * vs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "in vec4 position;                                                  \n"
-            "                                                                   \n"
-            "uniform mat4 mv_matrix;                                            \n"
-            "uniform mat4 proj_matrix;                                          \n"
-            "                                                                   \n"
-            "out VS_OUT                                                         \n"
-            "{                                                                  \n"
-            "    vec2 tc;                                                       \n"
-            "} vs_out;                                                          \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    gl_Position = proj_matrix * mv_matrix * position;              \n"
-            "    vs_out.tc = position.xy;                     \n"
-            "}                                                                  \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "out vec4 color;                                                    \n"
-            "layout (location = 2) out ivec2 data;                              \n"
-            "out float extra;                                                   \n"
-            "                                                                   \n"
-            "in BLOCK0                                                          \n"
-            "{                                                                  \n"
-            "    vec2 tc;                                                       \n"
-            "    vec4 color;                                                    \n"
-            "    flat int foo;                                                  \n"
-            "} fs_in0;                                                          \n"
-            "                                                                   \n"
-            "in BLOCK1                                                          \n"
-            "{                                                                  \n"
-            "    vec3 normal[4];                                                \n"
-            "    flat ivec3 layers;                                             \n"
-            "    double bar;                                                    \n"
-            "} fs_in1;                                                          \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    float val = abs(fs_in0.tc.x + fs_in0.tc.y) * 20.0f;            \n"
-            "    color = vec4(fract(val) >= 0.5 ? 1.0 : 0.25) + fs_in1.normal[3].xyzy;                  \n"
-            "    data = ivec2(1, 2);                                            \n"
-            "    extra = 9.0;                                                   \n"
-            "}                                                                  \n"
-        };
+        
+        GLuint vs = sb7::shader::load("media/shaders/programinfo/programinfo.vs.glsl", GL_VERTEX_SHADER);
+        GLuint fs = sb7::shader::load("media/shaders/programinfo/programinfo.fs.glsl", GL_FRAGMENT_SHADER);
 
         overlay.init(80, 50);
 
         GLuint program = glCreateProgram();
         glProgramParameteri(program, GL_PROGRAM_SEPARABLE, GL_TRUE);
 
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+        glAttachShader(program, vs);
         glAttachShader(program, fs);
 
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
         glLinkProgram(program);
+
+        glDeleteShader(fs);
+        glDeleteShader(vs);
 
         GLint outputs;
 

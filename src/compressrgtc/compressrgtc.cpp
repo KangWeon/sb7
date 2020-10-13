@@ -1,5 +1,5 @@
 /*
-* Copyright © 2012-2015 Graham Sellers
+* Copyrightâ„¢ 2012-2015 Graham Sellers
 *
 * Permission is hereby granted, free of charge, to any person obtaining a
 * copy of this software and associated documentation files (the "Software"),
@@ -25,6 +25,15 @@
 #include <shader.h>
 #include <sb7ktx.h>
 #include <sb7color.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+using glm::mat4;
+using glm::vec3;
+
+using glm::value_ptr;
+
 
 #define TEXTURE_WIDTH 512
 #define TEXTURE_HEIGHT 512
@@ -105,7 +114,7 @@ void rgtccompressor::startup()
 
 void rgtccompressor::render(double T)
 {
-    glClearBufferfv(GL_COLOR, 0, sb7::color::Black);
+    glClearBufferfv(GL_COLOR, 0, value_ptr(sb7::color::Black));
 
     Sleep(1);
 

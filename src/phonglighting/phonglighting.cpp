@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,14 +22,33 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <object.h>
 #include <sb7ktx.h>
 #include <shader.h>
 
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+//using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
 #define MANY_OBJECTS 1
-#undef MANY_OBJECTS
+//#undef MANY_OBJECTS
 
 class phonglighting_app : public sb7::application
 {
@@ -68,9 +87,9 @@ protected:
 
     struct uniforms_block
     {
-        vmath::mat4     mv_matrix;
-        vmath::mat4     view_matrix;
-        vmath::mat4     proj_matrix;
+         mat4     mv_matrix;
+         mat4     view_matrix;
+         mat4     proj_matrix;
     };
 
     GLuint          uniforms_buffer;
@@ -116,21 +135,21 @@ void phonglighting_app::render(double currentTime)
     glClearBufferfv(GL_DEPTH, 0, ones);
 
     /*
-    vmath::mat4 model_matrix = vmath::rotate((float)currentTime * 14.5f, 0.0f, 1.0f, 0.0f) *
-                               vmath::rotate(180.0f, 0.0f, 0.0f, 1.0f) *
-                               vmath::rotate(20.0f, 1.0f, 0.0f, 0.0f);
+     mat4 model_matrix =  rotate((float)currentTime * 14.5f, 0.0f, 1.0f, 0.0f) *
+                                rotate(180.0f, 0.0f, 0.0f, 1.0f) *
+                                rotate(20.0f, 1.0f, 0.0f, 0.0f);
                                */
 
-    vmath::vec3 view_position = vmath::vec3(0.0f, 0.0f, 50.0f);
-    vmath::mat4 view_matrix = vmath::lookat(view_position,
-                                            vmath::vec3(0.0f, 0.0f, 0.0f),
-                                            vmath::vec3(0.0f, 1.0f, 0.0f));
+     vec3 view_position =  vec3(0.0f, 0.0f, 50.0f);
+     mat4 view_matrix =  lookAt(view_position,
+                                             vec3(0.0f, 0.0f, 0.0f),
+                                             vec3(0.0f, 1.0f, 0.0f));
 
-    vmath::vec3 light_position = vmath::vec3(20.0f, 20.0f, 0.0f);
+     vec3 light_position =  vec3(20.0f, 20.0f, 0.0f);
 
-    vmath::mat4 light_proj_matrix = vmath::frustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 200.0f);
-    vmath::mat4 light_view_matrix = vmath::lookat(light_position,
-                                                  vmath::vec3(0.0f), vmath::vec3(0.0f, 1.0f, 0.0f));
+     mat4 light_proj_matrix =  frustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 200.0f);
+     mat4 light_view_matrix =  lookAt(light_position,
+                                                   vec3(0.0f),  vec3(0.0f, 1.0f, 0.0f));
 
 #if defined(MANY_OBJECTS)
     int i, j;
@@ -145,11 +164,11 @@ void phonglighting_app::render(double currentTime)
                                                                         sizeof(uniforms_block),
                                                                         GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
-            vmath::mat4 model_matrix = vmath::translate((float)i * 2.75f - 8.25f, 6.75f - (float)j * 2.25f, 0.0f);
+             mat4 model_matrix =  translate(vec3((float)i * 2.75f - 8.25f, 6.75f - (float)j * 2.25f, 0.0f));
 
             block->mv_matrix = view_matrix * model_matrix;
             block->view_matrix = view_matrix;
-            block->proj_matrix = vmath::perspective(50.0f,
+            block->proj_matrix =  perspective(radians(25.0f),
                                                     (float)info.windowWidth / (float)info.windowHeight,
                                                     0.1f,
                                                     1000.0f);
@@ -157,7 +176,7 @@ void phonglighting_app::render(double currentTime)
             glUnmapBuffer(GL_UNIFORM_BUFFER);
 
             glUniform1f(uniforms[per_vertex ? 1 : 0].specular_power, powf(2.0f, (float)j + 2.0f));
-            glUniform3fv(uniforms[per_vertex ? 1 : 0].specular_albedo, 1, vmath::vec3((float)i / 9.0f + 1.0f / 9.0f));
+            glUniform3fv(uniforms[per_vertex ? 1 : 0].specular_albedo, 1,  value_ptr(vec3((float)i / 9.0f + 1.0f / 9.0f)));
 
             object.render();
         }
@@ -169,11 +188,11 @@ void phonglighting_app::render(double currentTime)
                                                                 sizeof(uniforms_block),
                                                                 GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
-    vmath::mat4 model_matrix = vmath::scale(7.0f);
+     mat4 model_matrix =  scale(vec3(7.0f));
 
     block->mv_matrix = view_matrix * model_matrix;
     block->view_matrix = view_matrix;
-    block->proj_matrix = vmath::perspective(50.0f,
+    block->proj_matrix =  perspective(radians(50.0f),
                                             (float)info.windowWidth / (float)info.windowHeight,
                                             0.1f,
                                             1000.0f);
@@ -181,7 +200,7 @@ void phonglighting_app::render(double currentTime)
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
     glUniform1f(uniforms[per_vertex ? 1 : 0].specular_power, 30.0f);
-    glUniform3fv(uniforms[per_vertex ? 1 : 0].specular_albedo, 1, vmath::vec3(1.0f));
+    glUniform3fv(uniforms[per_vertex ? 1 : 0].specular_albedo, 1,  value_ptr(vec3(1.0f)));
 
     object.render();
 #endif

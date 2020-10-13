@@ -22,10 +22,31 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+#include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 // Remove this to draw only a single cube!
-// #define MANY_CUBES
+#define MANY_CUBES
 
 class singlepoint_app : public sb7::application
 {
@@ -40,57 +61,20 @@ class singlepoint_app : public sb7::application
 
     virtual void startup()
     {
-        static const char * vs_source[] =
-        {
-            "#version 410 core                                                  \n"
-            "                                                                   \n"
-            "in vec4 position;                                                  \n"
-            "                                                                   \n"
-            "out VS_OUT                                                         \n"
-            "{                                                                  \n"
-            "    vec4 color;                                                    \n"
-            "} vs_out;                                                          \n"
-            "                                                                   \n"
-            "uniform mat4 mv_matrix;                                            \n"
-            "uniform mat4 proj_matrix;                                          \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    gl_Position = proj_matrix * mv_matrix * position;              \n"
-            "    vs_out.color = position * 2.0 + vec4(0.5, 0.5, 0.5, 0.0);      \n"
-            "}                                                                  \n"
-        };
+        GLuint vs, fs;
 
-        static const char * fs_source[] =
-        {
-            "#version 410 core                                                  \n"
-            "                                                                   \n"
-            "out vec4 color;                                                    \n"
-            "                                                                   \n"
-            "in VS_OUT                                                          \n"
-            "{                                                                  \n"
-            "    vec4 color;                                                    \n"
-            "} fs_in;                                                           \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    color = fs_in.color;                                           \n"
-            "}                                                                  \n"
-        };
+        vs = sb7::shader::load("media/shaders/spinnycube/spinnycube.vs.glsl", GL_VERTEX_SHADER);
+        fs = sb7::shader::load("media/shaders/spinnycube/spinnycube.fs.glsl", GL_FRAGMENT_SHADER);
 
         program = glCreateProgram();
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
+        
         glAttachShader(program, vs);
         glAttachShader(program, fs);
 
         glLinkProgram(program);
+
+        glDeleteShader(vs);
+        glDeleteShader(fs);
 
         mv_location = glGetUniformLocation(program, "mv_matrix");
         proj_location = glGetUniformLocation(program, "proj_matrix");
@@ -158,49 +142,53 @@ class singlepoint_app : public sb7::application
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
         glEnableVertexAttribArray(0);
 
+
         glEnable(GL_CULL_FACE);
-        glFrontFace(GL_CW);
+        glFrontFace(GL_CCW);
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
+
+       
     }
 
     virtual void render(double currentTime)
     {
+        glViewport(0, 0, info.windowWidth, info.windowHeight);
+
         static const GLfloat green[] = { 0.0f, 0.25f, 0.0f, 1.0f };
         static const GLfloat one = 1.0f;
         
-        glViewport(0, 0, info.windowWidth, info.windowHeight);
         glClearBufferfv(GL_COLOR, 0, green);
         glClearBufferfv(GL_DEPTH, 0, &one);
 
         glUseProgram(program);
 
-        glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+        glUniformMatrix4fv(proj_location, 1, GL_FALSE, value_ptr(proj_matrix));
 
 #ifdef MANY_CUBES
         int i;
         for (i = 0; i < 24; i++)
         {
             float f = (float)i + (float)currentTime * 0.3f;
-            vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -6.0f) *
-                                    vmath::rotate((float)currentTime * 45.0f, 0.0f, 1.0f, 0.0f) *
-                                    vmath::rotate((float)currentTime * 21.0f, 1.0f, 0.0f, 0.0f) *
-                                    vmath::translate(sinf(2.1f * f) * 2.0f,
+            mat4 mv_matrix = translate(vec3(0.0f, 0.0f, -6.0f)) *
+                                    rotate(radians((float)currentTime * 45.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                                    rotate(radians((float)currentTime * 21.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                                    translate(vec3(sinf(2.1f * f) * 2.0f,
                                                      cosf(1.7f * f) * 2.0f,
-                                                     sinf(1.3f * f) * cosf(1.5f * f) * 2.0f);
-            glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+                                                     sinf(1.3f * f) * cosf(1.5f * f) * 2.0f));
+            glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 #else
         float f = (float)currentTime * 0.3f;
-        vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -4.0f) *
-                                vmath::translate(sinf(2.1f * f) * 0.5f,
+        mat4 mv_matrix = translate(vec3(0.0f, 0.0f, -4.0f)) *
+                                translate(vec3(sinf(2.1f * f) * 0.5f,
                                                     cosf(1.7f * f) * 0.5f,
-                                                    sinf(1.3f * f) * cosf(1.5f * f) * 2.0f) *
-                                vmath::rotate((float)currentTime * 45.0f, 0.0f, 1.0f, 0.0f) *
-                                vmath::rotate((float)currentTime * 81.0f, 1.0f, 0.0f, 0.0f);
-        glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+                                                    sinf(1.3f * f) * cosf(1.5f * f) * 2.0f)) *
+                                rotate(radians((float)currentTime * 45.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                                rotate(radians((float)currentTime * 81.0f), vec3(1.0f, 0.0f, 0.0f));
+        glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
         glDrawArrays(GL_TRIANGLES, 0, 36);
 #endif
     }
@@ -216,8 +204,12 @@ class singlepoint_app : public sb7::application
     {
         sb7::application::onResize(w, h);
 
+
+        glViewport(0, 0, w, h);
+
         aspect = (float)w / (float)h;
-        proj_matrix = vmath::perspective(50.0f, aspect, 0.1f, 1000.0f);
+        proj_matrix = perspective(radians(50.0f), aspect, 0.1f, 1000.0f);
+
     }
 
 private:
@@ -228,7 +220,7 @@ private:
     GLint           proj_location;
 
     float           aspect;
-    vmath::mat4     proj_matrix;
+    mat4     proj_matrix;
 };
 
 DECLARE_MAIN(singlepoint_app)

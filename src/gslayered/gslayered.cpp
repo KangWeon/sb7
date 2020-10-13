@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,12 +22,33 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include <sb7ktx.h>
 #include <shader.h>
 #include <object.h>
 
 #include <string>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
 static void print_shader_log(GLuint shader)
 {
     std::string str;
@@ -73,7 +94,7 @@ public:
 
         glGenBuffers(1, &transform_ubo);
         glBindBuffer(GL_UNIFORM_BUFFER, transform_ubo);
-        glBufferData(GL_UNIFORM_BUFFER, 17 * sizeof(vmath::mat4), NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, 17 * sizeof(mat4), NULL, GL_DYNAMIC_DRAW);
 
         glGenTextures(1, &array_texture);
         glBindTexture(GL_TEXTURE_2D_ARRAY, array_texture);
@@ -102,31 +123,31 @@ public:
         static const GLfloat gray[] =  { 0.1f, 0.1f, 0.1f, 1.0f };
         static const GLfloat one = 1.0f;
 
-        vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -4.0f) *
-                                vmath::rotate((float)t * 5.0f, 0.0f, 0.0f, 1.0f) *
-                                vmath::rotate((float)t * 30.0f, 1.0f, 0.0f, 0.0f);
-        vmath::mat4 proj_matrix = vmath::perspective(50.0f, (float)info.windowWidth / (float)info.windowHeight, 0.1f, 1000.0f);
-        vmath::mat4 mvp = proj_matrix * mv_matrix;
+        mat4 mv_matrix = translate(vec3(0.0f, 0.0f, -4.0f)) *
+                                rotate(radians((float)t * 5.0f), vec3(0.0f, 0.0f, 1.0f)) *
+                                rotate(radians((float)t * 30.0f), vec3(1.0f, 0.0f, 0.0f));
+        mat4 proj_matrix = perspective(radians(50.0f), (float)info.windowWidth / (float)info.windowHeight, 0.1f, 1000.0f);
+        mat4 mvp = proj_matrix * mv_matrix;
 
         struct TRANSFORM_BUFFER
         {
-            vmath::mat4 proj_matrix;
-            vmath::mat4 mv_matrix[16];
+            mat4 proj_matrix;
+            mat4 mv_matrix[16];
         };
 
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, transform_ubo);
 
         TRANSFORM_BUFFER * buffer = (TRANSFORM_BUFFER *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(TRANSFORM_BUFFER), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
-        buffer->proj_matrix = vmath::perspective(50.0f, 1.0f, 0.1f, 1000.0f); // proj_matrix;
+        buffer->proj_matrix = perspective(radians(50.0f), 1.0f, 0.1f, 1000.0f); // proj_matrix;
         int i;
 
         for (i = 0; i < 16; i++)
         {
             float fi = (float)(i + 12) / 16.0f;
-            buffer->mv_matrix[i] = vmath::translate(0.0f, 0.0f, -4.0f) *
-                                   vmath::rotate((float)t * 25.0f * fi, 0.0f, 0.0f, 1.0f) *
-                                   vmath::rotate((float)t * 30.0f * fi, 1.0f, 0.0f, 0.0f);
+            buffer->mv_matrix[i] = translate(vec3(0.0f, 0.0f, -4.0f)) *
+                                   rotate(radians((float)t * 25.0f * fi), vec3(0.0f, 0.0f, 1.0f)) *
+                                   rotate(radians((float)t * 30.0f * fi), vec3(1.0f, 0.0f, 0.0f));
         }
 
         glUnmapBuffer(GL_UNIFORM_BUFFER);

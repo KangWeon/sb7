@@ -1,5 +1,5 @@
 /*
-* Copyright © 2012-2015 Graham Sellers
+* Copyrightâ„¢ 2012-2015 Graham Sellers
 *
 * Permission is hereby granted, free of charge, to any person obtaining a
 * copy of this software and associated documentation files (the "Software"),
@@ -24,13 +24,33 @@
 #include <sb7.h>
 #include <shader.h>
 #include <object.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include <sb7textoverlay.h>
 #include <sb7ktx.h>
 #include <sb7color.h>
 
 #include <math.h>
 #include <omp.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class cullindirect_app : public sb7::application
 {
@@ -89,7 +109,7 @@ void cullindirect_app::init()
 
 struct CandidateDraw
 {
-    vmath::vec3 sphereCenter;
+    vec3 sphereCenter;
     float sphereRadius;
     unsigned int firstVertex;
     unsigned int vertexCount;
@@ -107,9 +127,9 @@ struct DrawArraysIndirectCommand
 
 struct TransformBuffer
 {
-    vmath::mat4     view_matrix;
-    vmath::mat4     proj_matrix;
-    vmath::mat4     view_proj_matrix;
+    mat4     view_matrix;
+    mat4     proj_matrix;
+    mat4     view_proj_matrix;
 };
 
 void cullindirect_app::startup()
@@ -132,7 +152,7 @@ void cullindirect_app::startup()
     for (i = 0; i < CANDIDATE_COUNT; i++)
     {
         object.get_sub_object_info(i % object.get_sub_object_count(), first, count);
-        pDraws[i].sphereCenter = vmath::vec3(0.0f);
+        pDraws[i].sphereCenter = vec3(0.0f);
         pDraws[i].sphereRadius = 4.0f;
         pDraws[i].firstVertex = first;
         pDraws[i].vertexCount = count;
@@ -148,7 +168,7 @@ void cullindirect_app::startup()
 
     glGenBuffers(1, &buffers.modelMatrices);
     glBindBuffer(GL_UNIFORM_BUFFER, buffers.modelMatrices);
-    glBufferStorage(GL_UNIFORM_BUFFER, 1024 * sizeof(vmath::mat4), nullptr, GL_MAP_WRITE_BIT);
+    glBufferStorage(GL_UNIFORM_BUFFER, 1024 * sizeof(mat4), nullptr, GL_MAP_WRITE_BIT);
 
     glGenBuffers(1, &buffers.transforms);
     glBindBuffer(GL_UNIFORM_BUFFER, buffers.transforms);
@@ -187,7 +207,7 @@ void cullindirect_app::render(double currentTime)
 
     // Set viewport and clear
     glViewport(0, 0, info.windowWidth, info.windowHeight);
-    glClearBufferfv(GL_COLOR, 0, sb7::color::Black);
+    glClearBufferfv(GL_COLOR, 0, value_ptr(sb7::color::Black));
     glClearBufferfv(GL_DEPTH, 0, farplane);
 
     // Bind and clear atomic counter
@@ -200,14 +220,14 @@ void cullindirect_app::render(double currentTime)
 
     // Bind model matrix UBO and fill with data
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, buffers.modelMatrices);
-    vmath::mat4* pModelMatrix = (vmath::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 1024 * sizeof(vmath::mat4), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    mat4* pModelMatrix = (mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 1024 * sizeof(mat4), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     
     for (i = 0; i < 1024; i++)
     {
         float f = float(i) / 127.0f + nowTime * 0.025f;
         float g = float(i) / 127.0f;
-        const vmath::mat4 model_matrix = vmath::translate(70.0f * vmath::vec3(sinf(f * 3.0f), cosf(f * 5.0f), cosf(f * 9.0f))) *
-                                         vmath::rotate(nowTime * 140.0f, vmath::normalize(vmath::vec3(sinf(g * 35.0f), cosf(g * 75.0f), cosf(g * 39.0f))));
+        const mat4 model_matrix = translate(identity<mat4>(), vec3(70.0f * vec3(sinf(f * 3.0f), cosf(f * 5.0f), cosf(f * 9.0f)))) *
+                                         rotate(identity<mat4>(), radians(nowTime * 140.0f), vec3(normalize(vec3(sinf(g * 35.0f), cosf(g * 75.0f), cosf(g * 39.0f)))));
         pModelMatrix[i] = model_matrix;
     }
 
@@ -219,10 +239,10 @@ void cullindirect_app::render(double currentTime)
 
     float t = nowTime * 0.1f;
 
-    const vmath::mat4 view_matrix = vmath::lookat(vmath::vec3(150.0f * cosf(t), 0.0f, 150.0f * sinf(t)),
-                                                  vmath::vec3(0.0f, 0.0f, 0.0f),
-                                                  vmath::vec3(0.0f, 1.0f, 0.0f));
-    const vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+    const mat4 view_matrix = lookAt(vec3(150.0f * cosf(t), 0.0f, 150.0f * sinf(t)),
+                                                  vec3(0.0f, 0.0f, 0.0f),
+                                                  vec3(0.0f, 1.0f, 0.0f));
+    const mat4 proj_matrix = perspective(radians(50.0f),
                                                        (float)info.windowWidth / (float)info.windowHeight,
                                                        1.0f,
                                                        2000.0f);

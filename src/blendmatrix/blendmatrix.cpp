@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,7 +22,26 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+
+using glm::perspective;
+using glm::lookAt;
+using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class blendmatrix_app : public sb7::application
 {
@@ -37,62 +56,20 @@ class blendmatrix_app : public sb7::application
 
     virtual void startup()
     {
-        static const char * vs_source[] =
-        {
-            "#version 410 core                                                  \n"
-            "                                                                   \n"
-            "in vec4 position;                                                  \n"
-            "                                                                   \n"
-            "out VS_OUT                                                         \n"
-            "{                                                                  \n"
-            "    vec4 color0;                                                   \n"
-            "    vec4 color1;                                                   \n"
-            "} vs_out;                                                          \n"
-            "                                                                   \n"
-            "uniform mat4 mv_matrix;                                            \n"
-            "uniform mat4 proj_matrix;                                          \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    gl_Position = proj_matrix * mv_matrix * position;              \n"
-            "    vs_out.color0 = position * 2.0 + vec4(0.5, 0.5, 0.5, 0.0);     \n"
-            "    vs_out.color1 = vec4(0.5, 0.5, 0.5, 0.0) - position * 2.0;     \n"
-            "}                                                                  \n"
-        };
+        GLuint vs, fs;
 
-        static const char * fs_source[] =
-        {
-            "#version 410 core                                                  \n"
-            "                                                                   \n"
-            "layout (location = 0, index = 0) out vec4 color0;                  \n"
-            "layout (location = 0, index = 1) out vec4 color1;                  \n"
-            "                                                                   \n"
-            "in VS_OUT                                                          \n"
-            "{                                                                  \n"
-            "    vec4 color0;                                                   \n"
-            "    vec4 color1;                                                   \n"
-            "} fs_in;                                                           \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    color0 = vec4(fs_in.color0.xyz, 1.0);                          \n"
-            "    color1 = vec4(fs_in.color0.xyz, 1.0);                          \n"
-            "}                                                                  \n"
-        };
+        vs = sb7::shader::load("media/shaders/blendmatrix/blendmatrix.vs.glsl", GL_VERTEX_SHADER);
+        fs = sb7::shader::load("media/shaders/blendmatrix/blendmatrix.fs.glsl", GL_FRAGMENT_SHADER);
 
         program = glCreateProgram();
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
 
         glAttachShader(program, vs);
         glAttachShader(program, fs);
 
         glLinkProgram(program);
+
+        glDeleteShader(vs);
+        glDeleteShader(fs);
 
         mv_location = glGetUniformLocation(program, "mv_matrix");
         proj_location = glGetUniformLocation(program, "proj_matrix");
@@ -190,11 +167,11 @@ class blendmatrix_app : public sb7::application
 
         glUseProgram(program);
 
-        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+        mat4 proj_matrix = perspective(radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      1000.0f);
-        glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+        glUniformMatrix4fv(proj_location, 1, GL_FALSE, value_ptr(proj_matrix));
 
         glEnable(GL_BLEND);
         glBlendColor(0.2f, 0.5f, 0.7f, 0.5f);
@@ -202,13 +179,13 @@ class blendmatrix_app : public sb7::application
         {
             for (i = 0; i < num_blend_funcs; i++)
             {
-                vmath::mat4 mv_matrix = 
-                    vmath::translate(9.5f - x_scale * float(i),
+                mat4 mv_matrix = 
+                    translate(identity<mat4>(), vec3(9.5f - x_scale * float(i),
                                      7.5f - y_scale * float(j),
-                                     -18.0f) *
-                    vmath::rotate(t * -45.0f, 0.0f, 1.0f, 0.0f) *
-                    vmath::rotate(t * -21.0f, 1.0f, 0.0f, 0.0f);
-                glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+                                     -18.0f)) *
+                    rotate(identity<mat4>(), radians(t * -45.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                    rotate(identity<mat4>(), radians(t * -21.0f), vec3(1.0f, 0.0f, 0.0f));
+                glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
                 glBlendFunc(blend_func[i], blend_func[j]);
                 glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0);
             }

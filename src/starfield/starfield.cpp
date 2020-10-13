@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright¢â 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,9 +23,28 @@
 
 #include <sb7.h>
 #include <sb7ktx.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <cmath>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 // Random number generator
 static unsigned int seed = 0x13371337;
@@ -134,8 +153,8 @@ class starfield_app : public sb7::application
 
         struct star_t
         {
-            vmath::vec3     position;
-            vmath::vec3     color;
+             vec3     position;
+             vec3     color;
         };
 
         glGenBuffers(1, &star_buffer);
@@ -158,7 +177,7 @@ class starfield_app : public sb7::application
         glUnmapBuffer(GL_ARRAY_BUFFER);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(star_t), NULL);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(star_t), (void *)sizeof(vmath::vec3));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(star_t), (void *)sizeof( vec3));
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
     }
@@ -168,7 +187,7 @@ class starfield_app : public sb7::application
         static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
         static const GLfloat one[] = { 1.0f };
         float t = (float)currentTime;
-        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+         mat4 proj_matrix =  perspective(radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      1000.0f);
@@ -183,7 +202,7 @@ class starfield_app : public sb7::application
         glUseProgram(render_prog);
 
         glUniform1f(uniforms.time, t);
-        glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, proj_matrix);
+        glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, value_ptr(proj_matrix));
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);

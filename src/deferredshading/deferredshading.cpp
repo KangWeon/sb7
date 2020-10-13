@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,18 +22,37 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <object.h>
 #include <shader.h>
 #include <sb7ktx.h>
 
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+//using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
 enum
 {
     MAX_DISPLAY_WIDTH       = 2048,
     MAX_DISPLAY_HEIGHT      = 2048,
-    NUM_LIGHTS              = 64,
-    NUM_INSTANCES           = (15 * 15)
+    NUM_LIGHTS                      = 64,
+    NUM_INSTANCES               = (15 * 15)
 };
 
 class deferred_shading_app : public sb7::application
@@ -99,7 +118,7 @@ protected:
 
         glGenBuffers(1, &render_transform_ubo);
         glBindBuffer(GL_UNIFORM_BUFFER, render_transform_ubo);
-        glBufferData(GL_UNIFORM_BUFFER, (2 + NUM_INSTANCES) * sizeof(vmath::mat4), NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, (2 + NUM_INSTANCES) * sizeof(mat4), NULL, GL_DYNAMIC_DRAW);
     }
 
     virtual void render(double currentTime)
@@ -134,22 +153,22 @@ protected:
         glClearBufferfv(GL_DEPTH, 0, float_ones);
 
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, render_transform_ubo);
-        vmath::mat4 * matrices = reinterpret_cast<vmath::mat4 *>(glMapBufferRange(GL_UNIFORM_BUFFER,
+        mat4 * matrices = reinterpret_cast<mat4 *>(glMapBufferRange(GL_UNIFORM_BUFFER,
                                                                                   0,
-                                                                                  (2 + NUM_INSTANCES) * sizeof(vmath::mat4),
+                                                                                  (2 + NUM_INSTANCES) * sizeof(mat4),
                                                                                   GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
 
-        matrices[0] = vmath::perspective(50.0f,
+        matrices[0] = perspective(radians(50.0f),
                                          (float)info.windowWidth / (float)info.windowHeight,
                                          0.1f,
                                          1000.0f);
         float d = (sinf(t * 0.131f) + 2.0f) * 0.15f;
-        vmath::vec3 eye_pos = vmath::vec3(d * 120.0f * sinf(t * 0.11f),
+        vec3 eye_pos = vec3(d * 120.0f * sinf(t * 0.11f),
                                           5.5f,
                                           d * 120.0f * cosf(t * 0.01f));
-        matrices[1] = vmath::lookat(eye_pos,
-                                    vmath::vec3(0.0f, -20.0f, 0.0f),
-                                    vmath::vec3(0.0f, 1.0f, 0.0f));
+        matrices[1] = lookAt(eye_pos,
+                                    vec3(0.0f, -20.0f, 0.0f),
+                                    vec3(0.0f, 1.0f, 0.0f));
 
         for (j = 0; j < 15; j++)
         {
@@ -158,7 +177,7 @@ protected:
             {
                 float i_f = (float)i;
 
-                matrices[j * 15 + i + 2] = vmath::translate((i - 7.5f) * 7.0f, 0.0f, (j - 7.5f) * 11.0f);
+                matrices[j * 15 + i + 2] = translate(identity<mat4>(), vec3((i - 7.5f) * 7.0f, 0.0f, (j - 7.5f) * 11.0f));
             }
         }
 
@@ -207,14 +226,14 @@ protected:
         {
             float i_f = ((float)i - 7.5f) * 0.1f + 0.3f;
             // t = 0.0f;
-            lights[i].position = vmath::vec3(100.0f * sinf(t * 1.1f + (5.0f * i_f)) * cosf(t * 2.3f + (9.0f * i_f)),
+            lights[i].position = vec3(100.0f * sinf(t * 1.1f + (5.0f * i_f)) * cosf(t * 2.3f + (9.0f * i_f)),
                                              15.0f,
                                              100.0f * sinf(t * 1.5f + (6.0f * i_f)) * cosf(t * 1.9f + (11.0f * i_f))); // 300.0f * sinf(t * i_f * 0.7f) * cosf(t * i_f * 0.9f) - 600.0f);
-            lights[i].color = vmath::vec3(cosf(i_f * 14.0f) * 0.5f + 0.8f,
+            lights[i].color = vec3(cosf(i_f * 14.0f) * 0.5f + 0.8f,
                                           sinf(i_f * 17.0f) * 0.5f + 0.8f,
                                           sinf(i_f * 13.0f) * cosf(i_f * 19.0f) * 0.5f + 0.8f);
-            // lights[i].color = vmath::vec3(1.0);
-                // vmath::vec3(0.5f, 0.4f, 0.75f);
+            // lights[i].color = vec3(1.0);
+                // vec3(0.5f, 0.4f, 0.75f);
         }
 
         glUnmapBuffer(GL_UNIFORM_BUFFER);
@@ -349,9 +368,9 @@ protected:
 #pragma pack (push, 1)
     struct light_t
     {
-        vmath::vec3         position;
+        vec3         position;
         unsigned int        : 32;       // pad0
-        vmath::vec3         color;
+        vec3         color;
         unsigned int        : 32;       // pad1
     };
 #pragma pack (pop)

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,9 +22,29 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <object.h>
+#include <shader.h>
+
+using glm::mat4;
+using glm::vec3;
+//using glm::vec4;
+
+using glm::perspective;
+//using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class sb6mrender_app : public sb7::application
 {
@@ -39,62 +59,20 @@ class sb6mrender_app : public sb7::application
 
     virtual void startup()
     {
-        static const char * vs_source[] =
-        {
-            "#version 410 core                                                  \n"
-            "                                                                   \n"
-            "layout (location = 0) in vec4 position;                            \n"
-            "layout (location = 1) in vec3 normal;                              \n"
-            "                                                                   \n"
-            "out VS_OUT                                                         \n"
-            "{                                                                  \n"
-            "    vec3 normal;                                                   \n"
-            "    vec4 color;                                                    \n"
-            "} vs_out;                                                          \n"
-            "                                                                   \n"
-            "uniform mat4 mv_matrix;                                            \n"
-            "uniform mat4 proj_matrix;                                          \n"
-            "uniform float explode_factor;                                      \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    gl_Position = proj_matrix * mv_matrix * position * vec4(vec3(explode_factor), 1.0);    \n"
-            "    vs_out.color = position * 2.0 + vec4(0.5, 0.5, 0.5, 0.0);      \n"
-            "    vs_out.normal = normalize(mat3(mv_matrix) * normal);           \n"
-            "}                                                                  \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 410 core                                                  \n"
-            "                                                                   \n"
-            "out vec4 color;                                                    \n"
-            "                                                                   \n"
-            "in VS_OUT                                                          \n"
-            "{                                                                  \n"
-            "    vec3 normal;                                                   \n"
-            "    vec4 color;                                                    \n"
-            "} fs_in;                                                           \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    color = vec4(1.0) * abs(normalize(fs_in.normal).z);               \n"
-            "}                                                                  \n"
-        };
+        GLuint vs, fs;
+        
+        vs = sb7::shader::load("media/shaders/depthclamp/depthclamp.vs.glsl", GL_VERTEX_SHADER);
+        fs = sb7::shader::load("media/shaders/depthclamp/depthclamp.fs.glsl", GL_FRAGMENT_SHADER);
 
         program = glCreateProgram();
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
 
         glAttachShader(program, vs);
         glAttachShader(program, fs);
 
         glLinkProgram(program);
+
+        glDeleteShader(vs);
+        glDeleteShader(fs);
 
         mv_location = glGetUniformLocation(program, "mv_matrix");
         proj_location = glGetUniformLocation(program, "proj_matrix");
@@ -120,18 +98,18 @@ class sb6mrender_app : public sb7::application
 
         glUseProgram(program);
 
-        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+        mat4 proj_matrix = perspective(radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      1.8f,
                                                      1000.0f);
-        glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+        glUniformMatrix4fv(proj_location, 1, GL_FALSE, value_ptr(proj_matrix));
 
         glEnable(GL_DEPTH_CLAMP);
 
-        vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -10.0f) *
-                                vmath::rotate(f * 45.0f, 0.0f, 1.0f, 0.0f) *
-                                vmath::rotate(f * 81.0f, 1.0f, 0.0f, 0.0f);
-        glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+        mat4 mv_matrix = translate(identity<mat4>(), vec3(0.0f, 0.0f, -10.0f)) *
+                                rotate(identity<mat4>(), radians(f * 45.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                                rotate(identity<mat4>(), radians(f * 81.0f), vec3(1.0f, 0.0f, 0.0f));
+        glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
 
         glUniform1f(explode_factor_location, sinf((float)currentTime * 3.0f) * cosf((float)currentTime * 4.0f) * 0.7f + 1.1f);
 

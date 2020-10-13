@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright¢â 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,7 +22,27 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+#include <shader.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+//using glm::lookAt;
+//using glm::frustum;
+
+//using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 // Remove this to draw only a single cube!
 #define MANY_CUBES
@@ -47,158 +67,21 @@ public:
 
     virtual void startup()
     {
-        static const char * vs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "in vec4 position;                                                  \n"
-            "                                                                   \n"
-            /* "out VS_OUT                                                         \n"
-            "{                                                                  \n"
-            "    vec4 color;                                                    \n"
-            "} vs_out;                                                          \n"*/
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    gl_Position = position;              \n"
-            // "    vs_out.color = position * 2.0 + vec4(0.5, 0.5, 0.5, 0.0);      \n"
-            "}                                                                  \n"
-        };
+        GLuint vs = sb7::shader::load("media/shaders/tessellatedcube/tessellatedcube.vs.glsl", GL_VERTEX_SHADER);
 
 #if 0
-        static const char * tcs_source[] =
-        {
-            "#version 420 core                                                                 \n"
-            "                                                                                  \n"
-            "layout (vertices = 4) out;                                                        \n"
-            "                                                                                  \n"
-            /* "in VS_OUT                                                                         \n"
-            "{                                                                                 \n"
-            "    vec4 color;                                                                   \n"
-            "} vs_in[];                                                                        \n"*/
-            "                                                                                  \n"
-            "void main(void)                                                                   \n"
-            "{                                                                                 \n"
-            "    if (gl_InvocationID == 0)                                                     \n"
-            "    {                                                                             \n"
-            "        gl_TessLevelInner[0] = 4.0;                                               \n"
-            "        gl_TessLevelInner[1] = 4.0;                                               \n"
-            "        gl_TessLevelOuter[0] = 4.0;                                               \n"
-            "        gl_TessLevelOuter[1] = 4.0;                                               \n"
-            "        gl_TessLevelOuter[2] = 4.0;                                               \n"
-            "        gl_TessLevelOuter[3] = 4.0;                                               \n"
-            "    }                                                                             \n"
-            "    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;     \n"
-            "}                                                                                 \n"
-        };
+        
+        GLuint tcs = sb7::shader::load("media/shaders/tessellatedcube/tessellatedcube0.tcs.glsl", GL_TESS_CONTROL_SHADER);
+
 #endif
 
-        static const char * tcs_source[] =
-        {
-            "#version 420 core                                                                 \n"
-            "                                                                                  \n"
-            "layout (vertices = 4) out;                                                        \n"
-            "                                                                                  \n"
-            /* "in VS_OUT                                                                         \n"
-            "{                                                                                 \n"
-            "    vec4 color;                                                                   \n"
-            "} vs_in[];                                                                        \n"*/
-            "                                                                                  \n"
-            "uniform mat4 mv_matrix;                                                           \n"
-            "uniform mat4 proj_matrix;                                                         \n"
-            "                                                                                  \n"
-            "void main(void)                                                                   \n"
-            "{                                                                                 \n"
-            "    vec4 pos[4];                                                                  \n"
-            "    float tf[4];                                                                  \n"
-            "    float t = 0.0;                                                                \n"
-            "                                                                                  \n"
-            "    int i;                                                                        \n"
-            "                                                                                  \n"
-            "    if (gl_InvocationID == 0)                                                     \n"
-            "    {                                                                             \n"
-            "        for (i = 0; i < 4; i++)                                                   \n"
-            "        {                                                                         \n"
-            "            pos[i] = proj_matrix * mv_matrix * gl_in[i].gl_Position;              \n"
-            "        }                                                                         \n"
-            "                                                                                  \n"
-            "        tf[0] = max(2.0, distance(pos[0].xy / pos[0].w,                           \n"
-            "                                  pos[1].xy / pos[1].w) * 16.0);                  \n"
-            "        tf[1] = max(2.0, distance(pos[1].xy / pos[1].w,                           \n"
-            "                                  pos[3].xy / pos[3].w) * 16.0);                  \n"
-            "        tf[2] = max(2.0, distance(pos[2].xy / pos[2].w,                           \n"
-            "                                  pos[3].xy / pos[3].w) * 16.0);                  \n"
-            "        tf[3] = max(2.0, distance(pos[2].xy / pos[2].w,                           \n"
-            "                                  pos[0].xy / pos[0].w) * 16.0);                  \n"
-            "        for (i = 0; i < 4; i++)                                                   \n"
-            "        {                                                                         \n"
-            "            t = max(t, tf[i]);                                                           \n"
-            "        }                                                                         \n"
-            "                                                                                  \n"
-            "        gl_TessLevelInner[0] = t;                             \n"
-            "        gl_TessLevelInner[1] = t;                             \n"
-            "        gl_TessLevelOuter[0] = tf[0];                                             \n"
-            "        gl_TessLevelOuter[1] = tf[1];                                             \n"
-            "        gl_TessLevelOuter[2] = tf[2];                                             \n"
-            "        gl_TessLevelOuter[3] = tf[3];                                             \n"
-            "    }                                                                             \n"
-            "                                                                                  \n"
-            "    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;     \n"
-            "}                                                                                 \n"
-        };
+        GLuint tcs = sb7::shader::load("media/shaders/tessellatedcube/tessellatedcube1.tcs.glsl", GL_TESS_CONTROL_SHADER);
 
-        static const char * tes_source[] =
-        {
-            "#version 420 core                                                                 \n"
-            "                                                                                  \n"
-            "layout (quads, fractional_odd_spacing, ccw) in;                                   \n"
-            "                                                                                  \n"
-            "uniform mat4 mv_matrix;                                                           \n"
-            "uniform mat4 proj_matrix;                                                         \n"
-            "                                                                                  \n"
-            "out vec3 normal;                                                                  \n"
-            "                                                                                  \n"
-            "void main(void)                                                                   \n"
-            "{                                                                                 \n"
-            "    vec4 mid1 = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);  \n"
-            "    vec4 mid2 = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, gl_TessCoord.x);  \n"
-            "    vec4 pos = mix(mid1, mid2, gl_TessCoord.y);                                   \n"
-            "    pos.xyz = /* normalize*/(pos.xyz) * 0.25;                                          \n"
-            "    normal = normalize(mat3(mv_matrix) * pos.xyz);                                \n"
-            "    gl_Position = proj_matrix * mv_matrix * pos;                                  \n"
-            "}                                                                                 \n"
-        };
+        GLuint tes = sb7::shader::load("media/shaders/tessellatedcube/tessellatedcube.tes.glsl", GL_TESS_EVALUATION_SHADER);
 
-        static const char * fs_source[] =
-        {
-            "#version 420 core                                                  \n"
-            "                                                                   \n"
-            "out vec4 color;                                                    \n"
-            "                                                                   \n"
-            "in vec3 normal;                                                    \n"
-            "                                                                   \n"
-            "void main(void)                                                    \n"
-            "{                                                                  \n"
-            "    color = vec4(abs(normal), 1.0);                                \n"
-            "}                                                                  \n"
-        };
+        GLuint fs = sb7::shader::load("media/shaders/tessellatedcube/tessellatedcube.fs.glsl", GL_FRAGMENT_SHADER);
 
         program = glCreateProgram();
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
-        GLuint tcs = glCreateShader(GL_TESS_CONTROL_SHADER);
-        glShaderSource(tcs, 1, tcs_source, NULL);
-        glCompileShader(tcs);
-
-        GLuint tes = glCreateShader(GL_TESS_EVALUATION_SHADER);
-        glShaderSource(tes, 1, tes_source, NULL);
-        glCompileShader(tes);
 
         glAttachShader(program, vs);
         glAttachShader(program, tcs);
@@ -206,6 +89,11 @@ public:
         glAttachShader(program, fs);
 
         glLinkProgram(program);
+
+        glDeleteShader(fs);
+        glDeleteShader(tes);
+        glDeleteShader(tcs);
+        glDeleteShader(vs);
 
         mv_location = glGetUniformLocation(program, "mv_matrix");
         proj_location = glGetUniformLocation(program, "proj_matrix");
@@ -272,37 +160,37 @@ public:
 
         glUseProgram(program);
 
-        vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+         mat4 proj_matrix =  perspective(radians(50.0f),
                                                      (float)info.windowWidth / (float)info.windowHeight,
                                                      0.1f,
                                                      1000.0f);
-        glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+        glUniformMatrix4fv(proj_location, 1, GL_FALSE, value_ptr(proj_matrix));
         glPatchParameteri(GL_PATCH_VERTICES, 4);
 
-        glPolygonMode(GL_FRONT_AND_BACK, wireframe_mode ? GL_LINE : GL_FILL);
+        glPolygonMode(GL_FRONT_AND_BACK, wireframe_mode ?  GL_LINE : GL_FILL);
 
 #ifdef MANY_CUBES
         for (i = 0; i < 100; i++)
         {
             float f = (float)i + (float)currentTime * 0.03f;
-            vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -10.0f) *
-                                    vmath::translate(sinf(2.1f * f) * 4.0f,
+             mat4 mv_matrix =  translate(vec3(0.0f, 0.0f, -10.0f)) *
+                                     translate(vec3(sinf(2.1f * f) * 4.0f,
                                                      cosf(1.7f * f) * 4.0f,
-                                                     sinf(4.3f * f) * cosf(3.5f * f) * 30.0f) *
-                                    vmath::rotate((float)currentTime * 3.0f, 1.0f, 0.0f, 0.0f) *
-                                    vmath::rotate((float)currentTime * 5.0f, 0.0f, 1.0f, 0.0f);
-            glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+                                                     sinf(4.3f * f) * cosf(3.5f * f) * 30.0f)) *
+                                     rotate(radians((float)currentTime * 3.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                                     rotate(radians((float)currentTime * 5.0f), vec3(0.0f, 1.0f, 0.0f));
+            glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
             glDrawElements(GL_PATCHES, 24, GL_UNSIGNED_SHORT, 0);
         }
 #else
         float f = (float)currentTime * 0.3f;
-        vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -3.0f) *
-                                vmath::translate(0.0f, // sinf(2.1f * f) * 0.5f,
+         mat4 mv_matrix =  translate(vec3(0.0f, 0.0f, -3.0f)) *
+                                 translate(vec3(0.0f, // sinf(2.1f * f) * 0.5f,
                                                  0.0f, // cosf(1.7f * f) * 0.5f,
-                                                 sinf(1.3f * f) * cosf(1.5f * f) * 15.0f) *
-                                // vmath::rotate((float)currentTime * 45.0f, 0.0f, 1.0f, 0.0f) *
-                                vmath::rotate((float)currentTime * 81.0f, 1.0f, 0.0f, 0.0f);
-        glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+                                                 sinf(1.3f * f) * cosf(1.5f * f) * 15.0f)) *
+                                //  rotate((float)currentTime * 45.0f, 0.0f, 1.0f, 0.0f) *
+                                 rotate(radians((float)currentTime * 81.0f), vec3(1.0f, 0.0f, 0.0f));
+        glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
         glDrawElements(GL_PATCHES, 24, GL_UNSIGNED_SHORT, 0);
 #endif
     }

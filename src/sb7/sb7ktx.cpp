@@ -1,5 +1,5 @@
 /*
- * Copyright � 2012-2015 Graham Sellers
+ * Copyright™ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,10 +31,7 @@
 #include <cstdlib>
 #include <cstring>
 
-// #include <sb7.h>
-
-//#include "GL/gl3w.h"
-#include <glad/glad.h>
+#include <sb7.h>
 
 namespace sb7
 {

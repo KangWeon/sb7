@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright ï¿½ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,8 +23,28 @@
 
 #include <sb7.h>
 #include <shader.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include <sb7color.h>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+//using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class sparsetexture_app : public sb7::application
 {
@@ -136,15 +156,15 @@ void sparsetexture_app::render(double currentTime)
 
     const float f = (float)total_time;
 
-    vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -2.0f) *
-                            vmath::rotate(f * 40.0f, 0.0f, 1.0f, 0.0f);
+    mat4 mv_matrix = translate(vec3(0.0f, 0.0f, -2.0f)) *
+                            rotate(radians(f * 40.0f), vec3(0.0f, 1.0f, 0.0f));
 
-    vmath::mat4 vp_matrix = vmath::perspective(50.0f,
+    mat4 vp_matrix = perspective(radians(50.0f),
                                                (float)info.windowWidth / (float)info.windowHeight,
                                                0.1f, 1000.0f);
 
     glViewport(0, 0, info.windowWidth, info.windowHeight);
-    glClearBufferfv(GL_COLOR, 0, sb7::color::Black);
+    glClearBufferfv(GL_COLOR, 0, value_ptr(sb7::color::Black));
 
     glBindVertexArray(vao);
     glUseProgram(program);

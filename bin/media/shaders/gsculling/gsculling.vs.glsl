@@ -27,7 +27,7 @@ void main(void)
                                                                                         
     // Dot product gives us diffuse intensity                                           
     vertex.color = vec4(0.7, 0.6, 1.0, 1.0) * abs(dot(vEyeNormal, vLightDir));          
-                                                                                        
-    gl_Position = vVertex;                                                              
+                                                                                                                               
+    gl_Position = vVertex;                                                                                         
     vertex.normal = vNormal;                                                            
 }                                                                                       

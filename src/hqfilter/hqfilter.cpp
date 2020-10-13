@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,7 +23,6 @@
 
 #include <sb7.h>
 #include <shader.h>
-#include <vmath.h>
 #include <sb7ktx.h>
 
 class cubicfilter_app : public sb7::application

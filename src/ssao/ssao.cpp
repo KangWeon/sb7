@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright¢â 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,7 +25,27 @@
 
 #include <shader.h>
 #include <object.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+//using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
+
 
 // Random number generator
 static unsigned int seed = 0x13371337;
@@ -118,8 +138,8 @@ protected:
 
     struct SAMPLE_POINTS
     {
-        vmath::vec4     point[256];
-        vmath::vec4     random_vectors[256];
+         vec4     point[256];
+         vec4     random_vectors[256];
     };
 };
 
@@ -222,30 +242,32 @@ void ssao_app::render(double currentTime)
 
     glUseProgram(render_program);
 
-    const vmath::mat4 lookat_matrix = vmath::lookat(vmath::vec3(0.0f, 3.0f, 15.0f),
-                                                    vmath::vec3(0.0f, 0.0f, 0.0f),
-                                                    vmath::vec3(0.0f, 1.0f, 0.0f));
+    const  mat4 lookat_matrix =  lookAt( vec3(0.0f, 3.0f, 15.0f),
+                                                     vec3(0.0f, 0.0f, 0.0f),
+                                                     vec3(0.0f, 1.0f, 0.0f));
 
-    vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+     mat4 proj_matrix =  perspective(radians(50.0f),
                                                     (float)info.windowWidth / (float)info.windowHeight,
                                                     0.1f,
                                                     1000.0f);
-    glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, proj_matrix);
+    glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, value_ptr(proj_matrix));
 
-    vmath::mat4 mv_matrix = vmath::translate(0.0f, -5.0f, 0.0f) *
-                            vmath::rotate(f * 5.0f, 0.0f, 1.0f, 0.0f) *
-                            vmath::mat4::identity();
-    glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, lookat_matrix * mv_matrix);
+     mat4 mv_matrix =  translate(vec3(0.0f, -5.0f, 0.0f)) *
+                             rotate(radians(f * 5.0f), vec3(0.0f, 1.0f, 0.0f)) *
+                             identity<mat4>();
 
-    glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
+    glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, value_ptr(lookat_matrix * mv_matrix));
+
+    glUniform1f(uniforms.render.shading_level, show_shading ?  (show_ao ?  0.7f : 1.0f) : 0.0f);
 
     object.render();
 
-    mv_matrix = vmath::translate(0.0f, -4.5f, 0.0f) *
-                vmath::rotate(f * 5.0f, 0.0f, 1.0f, 0.0f) *
-                vmath::scale(4000.0f, 0.1f, 4000.0f) *
-                vmath::mat4::identity();
-    glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, lookat_matrix * mv_matrix);
+    mv_matrix = translate(vec3(0.0f, -4.5f, 0.0f)) *
+        rotate(radians(f * 5.0f), vec3(0.0f, 1.0f, 0.0f)) *
+        scale(vec3(4000.0f, 0.1f, 4000.0f)) * 
+        identity<mat4>();
+                 
+    glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, value_ptr(lookat_matrix * mv_matrix));
 
     cube.render();
 
@@ -254,9 +276,9 @@ void ssao_app::render(double currentTime)
     glUseProgram(ssao_program);
 
     glUniform1f(uniforms.ssao.ssao_radius, ssao_radius * float(info.windowWidth) / 1000.0f);
-    glUniform1f(uniforms.ssao.ssao_level, show_ao ? (show_shading ? 0.3f : 1.0f) : 0.0f);
-    // glUniform1i(uniforms.ssao.weight_by_angle, weight_by_angle ? 1 : 0);
-    glUniform1i(uniforms.ssao.randomize_points, randomize_points ? 1 : 0);
+    glUniform1f(uniforms.ssao.ssao_level, show_ao ?  (show_shading ?  0.3f : 1.0f) : 0.0f);
+    // glUniform1i(uniforms.ssao.weight_by_angle, weight_by_angle ?  1 : 0);
+    glUniform1i(uniforms.ssao.randomize_points, randomize_points ?  1 : 0);
     glUniform1ui(uniforms.ssao.point_count, point_count);
 
     glActiveTexture(GL_TEXTURE0);

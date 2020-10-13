@@ -1,5 +1,5 @@
 /*
- * Copyright � 2012-2015 Graham Sellers
+ * Copyright™ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -26,6 +26,11 @@
 #include <glm/glm.hpp>
 
 #include <cmath>
+
+#include <shader.h>
+
+using glm::mat4;
+using glm::vec4;
 
 // Random number generator
 static unsigned int seed = 0x13371337;
@@ -59,83 +64,8 @@ class alienrain_app : public sb7::application
     {
         GLuint  vs, fs;
 
-        static const char * vs_source[] =
-        {
-            "#version 410 core                                                      \n"
-            "                                                                       \n"
-            "layout (location = 0) in int alien_index;                              \n"
-            "                                                                       \n"
-            "out VS_OUT                                                             \n"
-            "{                                                                      \n"
-            "    flat int alien;                                                    \n"
-            "    vec2 tc;                                                           \n"
-            "} vs_out;                                                              \n"
-            "                                                                       \n"
-            "struct droplet_t                                                       \n"
-            "{                                                                      \n"
-            "    float x_offset;                                                    \n"
-            "    float y_offset;                                                    \n"
-            "    float orientation;                                                 \n"
-            "    float unused;                                                      \n"
-            "};                                                                     \n"
-            "                                                                       \n"
-            "layout (std140) uniform droplets                                       \n"
-            "{                                                                      \n"
-            "    droplet_t droplet[256];                                            \n"
-            "};                                                                     \n"
-            "                                                                       \n"
-            "void main(void)                                                        \n"
-            "{                                                                      \n"
-            "    const vec2[4] position = vec2[4](vec2(-0.5, -0.5),                 \n"
-            "                                     vec2( 0.5, -0.5),                 \n"
-            "                                     vec2(-0.5,  0.5),                 \n"
-            "                                     vec2( 0.5,  0.5));                \n"
-            "    vs_out.tc = position[gl_VertexID].xy + vec2(0.5);                  \n"
-            "    float co = cos(droplet[alien_index].orientation);                  \n"
-            "    float so = sin(droplet[alien_index].orientation);                  \n"
-            "    mat2 rot = mat2(vec2(co, so),                                      \n"
-            "                    vec2(-so, co));                                    \n"
-            "    vec2 pos = 0.25 * rot * position[gl_VertexID];                     \n"
-            "    gl_Position = vec4(pos.x + droplet[alien_index].x_offset,          \n"
-            "                       pos.y + droplet[alien_index].y_offset,          \n"
-            "                       0.5, 1.0);                                      \n"
-            "    vs_out.alien = alien_index % 64;                                   \n"
-            "}                                                                      \n"
-        };
-
-        static const char * fs_source[] =
-        {
-            "#version 410 core                                                      \n"
-            "                                                                       \n"
-            "layout (location = 0) out vec4 color;                                  \n"
-            "                                                                       \n"
-            "in VS_OUT                                                              \n"
-            "{                                                                      \n"
-            "    flat int alien;                                                    \n"
-            "    vec2 tc;                                                           \n"
-            "} fs_in;                                                               \n"
-            "                                                                       \n"
-            "uniform sampler2DArray tex_aliens;                                     \n"
-            "                                                                       \n"
-            "void main(void)                                                        \n"
-            "{                                                                      \n"
-            "    color = texture(tex_aliens, vec3(fs_in.tc, float(fs_in.alien)));   \n"
-            "}                                                                      \n"
-        };
-
-        char buffer[1024];
-
-        vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
-        glGetShaderInfoLog(vs, 1024, NULL, buffer);
-
-        fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
-        glGetShaderInfoLog(vs, 1024, NULL, buffer);
+        vs = sb7::shader::load("media/shaders/alienrain/alienrain.vs.glsl", GL_VERTEX_SHADER);
+        fs = sb7::shader::load("media/shaders/alienrain/alienrain.fs.glsl", GL_FRAGMENT_SHADER);
 
         render_prog = glCreateProgram();
         glAttachShader(render_prog, vs);
@@ -154,7 +84,7 @@ class alienrain_app : public sb7::application
 
         glGenBuffers(1, &rain_buffer);
         glBindBuffer(GL_UNIFORM_BUFFER, rain_buffer);
-        glBufferData(GL_UNIFORM_BUFFER, 256 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, 256 * sizeof(vec4), NULL, GL_DYNAMIC_DRAW);
 
         for (int i = 0; i < 256; i++)
         {
@@ -173,13 +103,13 @@ class alienrain_app : public sb7::application
         static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
         float t = (float)currentTime;
 
-        
+        // glViewport(0, 0, info.windowWidth, info.windowHeight);
         glClearBufferfv(GL_COLOR, 0, black);
 
         glUseProgram(render_prog);
 
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, rain_buffer);
-        glm::vec4 * droplet = (glm::vec4 *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 256 * sizeof(glm::vec4), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+        vec4 * droplet = (vec4 *)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 256 * sizeof(vec4), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 
         for (int i = 0; i < 256; i++)
         {

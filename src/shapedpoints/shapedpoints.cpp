@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright¢â 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,8 +22,9 @@
  */
 
 #include <sb7.h>
+
 #include <sb7ktx.h>
-#include <vmath.h>
+#include <shader.h>
 
 #include <cmath>
 
@@ -62,68 +63,11 @@ class starfield_app : public sb7::application
 
     void startup()
     {
-        GLuint  vs, fs;
+       
 
-        static const char * fs_source[] =
-        {
-            "#version 410 core                                              \n"
-            "                                                               \n"
-            "layout (location = 0) out vec4 color;                          \n"
-            "                                                               \n"
-            "flat in int shape;                                             \n"
-            "                                                               \n"
-            "void main(void)                                                \n"
-            "{                                                              \n"
-            "    color = vec4(1.0);                                         \n"
-            "    vec2 p = gl_PointCoord * 2.0 - vec2(1.0);                  \n"
-            "    if (shape == 0)                                            \n"
-            "    {                                                          \n"
-            "        if (dot(p, p) > 1.0)                                   \n"
-            "            discard;                                           \n"
-            "    }                                                          \n"
-            "    else if (shape == 1)                                       \n"
-            "    {                                                          \n"
-            "        if (dot(p, p) > sin(atan(p.y, p.x) * 5.0))             \n"
-            "            discard;                                           \n"
-            "    }                                                          \n"
-            "    else if (shape == 2)                                       \n"
-            "    {                                                          \n"
-            "        if (abs(0.8 - dot(p, p)) > 0.2)                        \n"
-            "            discard;                                           \n"
-            "    }                                                          \n"
-            "    else if (shape == 3)                                       \n"
-            "    {                                                          \n"
-            "        if (abs(p.x) < abs(p.y))                               \n"
-            "            discard;                                           \n"
-            "    }                                                          \n"
-            "}                                                              \n"
-        };
-
-        static const char * vs_source[] =
-        {
-            "#version 410 core                                                      \n"
-            "                                                                       \n"
-            "flat out int shape;                                                    \n"
-            "                                                                       \n"
-            "void main(void)                                                        \n"
-            "{                                                                      \n"
-            "    const vec4[4] position = vec4[4](vec4(-0.4, -0.4, 0.5, 1.0),       \n"
-            "                                     vec4( 0.4, -0.4, 0.5, 1.0),       \n"
-            "                                     vec4(-0.4,  0.4, 0.5, 1.0),       \n"
-            "                                     vec4( 0.4,  0.4, 0.5, 1.0));      \n"
-            "    gl_Position = position[gl_VertexID];                               \n"
-            "    shape = gl_VertexID;                                               \n"
-            "}                                                                      \n"
-        };
-
-        vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
-
-        fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
-
+        GLuint vs = sb7::shader::load("media/shaders/shapedpoints/shapedpoints.vs.glsl", GL_VERTEX_SHADER);
+        GLuint fs = sb7::shader::load("media/shaders/shapedpoints/shapedpoints.fs.glsl", GL_FRAGMENT_SHADER);
+       
         render_prog = glCreateProgram();
         glAttachShader(render_prog, vs);
         glAttachShader(render_prog, fs);

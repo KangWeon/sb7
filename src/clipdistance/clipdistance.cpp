@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * This code is part of the OpenGL SuperBible, 6th Edition.
  *
@@ -26,7 +26,25 @@
 #include <sb7.h>
 #include <object.h>
 #include <shader.h>
-#include <vmath.h>
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+using glm::mat4;
+using glm::vec3;
+using glm::vec4;
+
+using glm::perspective;
+using glm::lookAt;
+using glm::frustum;
+
+using glm::identity;
+using glm::translate;
+using glm::rotate;
+using glm::scale;
+
+using glm::radians;
+using glm::value_ptr;
 
 class clipdistance_app : public sb7::application
 {
@@ -93,28 +111,28 @@ void clipdistance_app::render(double currentTime)
 
     glUseProgram(render_program);
 
-    vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+    mat4 proj_matrix = perspective(radians(50.0f),
                                                  (float)info.windowWidth / (float)info.windowHeight,
                                                  0.1f,
                                                  1000.0f);
 
-    vmath::mat4 mv_matrix = vmath::translate(0.0f, 0.0f, -15.0f) *
-                            vmath::rotate(f * 0.34f, 0.0f, 1.0f, 0.0f) *
-                            vmath::translate(0.0f, -4.0f, 0.0f);
+    mat4 mv_matrix = translate(identity<mat4>(), vec3(0.0f, 0.0f, -15.0f)) *
+                            rotate(identity<mat4>(), radians(f * 0.34f), vec3(0.0f, 1.0f, 0.0f)) *
+                            translate(identity<mat4>(), vec3(0.0f, -4.0f, 0.0f));
 
-    vmath::mat4 plane_matrix = vmath::rotate(f * 6.0f, 1.0f, 0.0f, 0.0f) *
-                               vmath::rotate(f * 7.3f, 0.0f, 1.0f, 0.0f);
+    mat4 plane_matrix = rotate(identity<mat4>(), radians(f * 6.0f), vec3(1.0f, 0.0f, 0.0f)) *
+                               rotate(identity<mat4>(), radians(f * 7.3f), vec3(0.0f, 1.0f, 0.0f));
 
-    vmath::vec4 plane = plane_matrix[0];
+    vec4 plane = plane_matrix[0];
     plane[3] = 0.0f;
-    plane = vmath::normalize(plane);
+    plane = normalize(plane);
 
-    vmath::vec4 clip_sphere = vmath::vec4(sinf(f * 0.7f) * 3.0f, cosf(f * 1.9f) * 3.0f, sinf(f * 0.1f) * 3.0f, cosf(f * 1.7f) + 2.5f);
+    vec4 clip_sphere = vec4(sinf(f * 0.7f) * 3.0f, cosf(f * 1.9f) * 3.0f, sinf(f * 0.1f) * 3.0f, cosf(f * 1.7f) + 2.5f);
 
-    glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, proj_matrix);
-    glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, mv_matrix);
-    glUniform4fv(uniforms.clip_plane, 1, plane);
-    glUniform4fv(uniforms.clip_sphere, 1, clip_sphere);
+    glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, value_ptr(proj_matrix));
+    glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, value_ptr(mv_matrix));
+    glUniform4fv(uniforms.clip_plane, 1, value_ptr(plane));
+    glUniform4fv(uniforms.clip_sphere, 1, value_ptr(clip_sphere));
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CLIP_DISTANCE0);

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * This code is part of the OpenGL SuperBible, 7th Edition.
  *
@@ -24,9 +24,29 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 
 #include <omp.h>
+#include <shader.h>
+
+//using glm::mat4;
+using glm::vec3;
+//using glm::vec4;
+
+//using glm::perspective;
+//using glm::lookAt;
+//using glm::frustum;
+
+//using glm::identity;
+//using glm::translate;
+//using glm::rotate;
+//using glm::scale;
+
+//using glm::radians;
+//using glm::value_ptr;
 
 class ompparticles_app : public sb7::application
 {
@@ -50,8 +70,8 @@ public:
 
     struct PARTICLE
     {
-        vmath::vec3 position;
-        vmath::vec3 velocity;
+        vec3 position;
+        vec3 velocity;
     };
 
 protected:
@@ -108,41 +128,16 @@ void ompparticles_app::startup()
 
     GLuint vs, fs;
 
-    vs = glCreateShader(GL_VERTEX_SHADER);
-    fs = glCreateShader(GL_FRAGMENT_SHADER);
-
-    static const char* vs_source[] =
-    {
-        "#version 440 core\n"
-        "layout (location = 0) in vec3 position;\n"
-        "out vec4 particle_color;\n"
-        "void main(void)\n"
-        "{\n"
-        "    particle_color = vec4(0.6, 0.8, 0.8, 1.0) * (smoothstep(-10.0, 10.0, position.z) * 0.6 + 0.4);\n"
-        "    gl_Position = vec4(position * 0.2, 1.0);\n"
-        "}\n"
-    };
-    glShaderSource(vs, 1, vs_source, nullptr);
-
-    static const char* fs_source[] =
-    {
-        "#version 440 core\n"
-        "layout (location = 0) out vec4 o_color;\n"
-        "in vec4 particle_color;\n"
-        "void main(void)\n"
-        "{\n"
-        "    o_color = particle_color;\n"
-        "}\n"
-    };
-    glShaderSource(fs, 1, fs_source, nullptr);
-
-    glCompileShader(vs);
-    glCompileShader(fs);
+    vs = sb7::shader::load("media/shaders/ompparticles/ompparticles.vs.glsl", GL_VERTEX_SHADER);
+    fs = sb7::shader::load("media/shaders/ompparticles/ompparticles.fs.glsl", GL_FRAGMENT_SHADER);
 
     draw_program = glCreateProgram();
     glAttachShader(draw_program, vs);
     glAttachShader(draw_program, fs);
     glLinkProgram(draw_program);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
 
     int maxThreads = omp_get_max_threads();
     omp_set_num_threads(maxThreads);
@@ -174,7 +169,7 @@ void ompparticles_app::iniitialize_particles(void)
         particles[0][i].position[0] = random_float() * 6.0f - 3.0f;
         particles[0][i].position[1] = random_float() * 6.0f - 3.0f;
         particles[0][i].position[2] = random_float() * 6.0f - 3.0f;
-        particles[0][i].velocity = particles[0][i].position * 0.001f;
+        particles[0][i].velocity = particles[0][i].position * 0.002f;
 
         mapped_buffer[i] = particles[0][i];
     }
@@ -192,7 +187,7 @@ void ompparticles_app::update_particles(float deltaTime)
     {
         // Get my own data
         const PARTICLE& me = src[i];
-        vmath::vec3 delta_v(0.0f);
+        vec3 delta_v(0.0f);
 
         // For all the other particles
         for (int j = 0; j < PARTICLE_COUNT; j++)
@@ -200,10 +195,10 @@ void ompparticles_app::update_particles(float deltaTime)
             if (i != j) // ... not me!
             {
                 //  Get the vector to the other particle
-                vmath::vec3 delta_pos = src[j].position - me.position;
-                float distance = vmath::length(delta_pos);
+                vec3 delta_pos = src[j].position - me.position;
+                float distance = length(delta_pos);
                 // Normalize
-                vmath::vec3 delta_dir = delta_pos / distance;
+                vec3 delta_dir = delta_pos / distance;
                 // This clamp stops the system from blowing up if particles get
                 // too close...
                 distance = distance < 0.005f ? 0.005f : distance;
@@ -235,7 +230,7 @@ void ompparticles_app::update_particles_omp(float deltaTime)
     {
         // Get my own data
         const PARTICLE& me = src[i];
-        vmath::vec3 delta_v(0.0f);
+        vec3 delta_v(0.0f);
 
         // For all the other particles
         for (int j = 0; j < PARTICLE_COUNT; j++)
@@ -243,10 +238,10 @@ void ompparticles_app::update_particles_omp(float deltaTime)
             if (i != j) // ... not me!
             {
                 //  Get the vector to the other particle
-                vmath::vec3 delta_pos = src[j].position - me.position;
-                float distance = vmath::length(delta_pos);
+                vec3 delta_pos = src[j].position - me.position;
+                float distance = length(delta_pos);
                 // Normalize
-                vmath::vec3 delta_dir = delta_pos / distance;
+                vec3 delta_dir = delta_pos / distance;
                 // This clamp stops the system from blowing up if particles get
                 // too close...
                 distance = distance < 0.005f ? 0.005f : distance;

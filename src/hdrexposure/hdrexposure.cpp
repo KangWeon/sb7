@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyrightâ„¢ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,11 +22,15 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
 #include <sb7ktx.h>
 #include <sb7textoverlay.h>
 
+#include <shader.h>
+
 #include <string>
+
+
 static void print_shader_log(GLuint shader)
 {
     std::string str;
@@ -44,38 +48,6 @@ static void print_shader_log(GLuint shader)
 #endif
 }
 
-static const char * vs_source[] =
-{
-    "#version 420 core                                                              \n"
-    "                                                                               \n"
-    "void main(void)                                                                \n"
-    "{                                                                              \n"
-    "    const vec4 vertices[] = vec4[](vec4(-1.0, -1.0, 0.5, 1.0),                 \n"
-    "                                   vec4( 1.0, -1.0, 0.5, 1.0),                 \n"
-    "                                   vec4(-1.0,  1.0, 0.5, 1.0),                 \n"
-    "                                   vec4( 1.0,  1.0, 0.5, 1.0));                \n"
-    "                                                                               \n"
-    "    gl_Position = vertices[gl_VertexID];                                       \n"
-    "}                                                                              \n"
-};
-
-static const char * fs_source[] =
-{
-    "#version 430 core                                                              \n"
-    "                                                                               \n"
-    "uniform sampler2D s;                                                           \n"
-    "                                                                               \n"
-    "uniform float exposure;\n"
-    "\n"
-    "out vec4 color;                                                                \n"
-    "                                                                               \n"
-    "void main(void)                                                                \n"
-    "{                                                                              \n"
-    "    vec4 c = texture(s, 2.0 * gl_FragCoord.xy / textureSize(s, 0));                  \n"
-    "    c.xyz = vec3(1.0) - exp(-c.xyz * exposure);                                \n"
-    "    color = c;                                                                 \n"
-    "}                                                                              \n"
-};
 
 class hdrexposure_app : public sb7::application
 {
@@ -108,19 +80,19 @@ public:
         // Now bind it to the context using the GL_TEXTURE_2D binding point
         glBindTexture(GL_TEXTURE_2D, texture);
 
-        program = glCreateProgram();
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
+        GLuint vs = sb7::shader::load("media/shaders/hdrexposure/hdrexposure.vs.glsl", GL_VERTEX_SHADER);
+        GLuint fs = sb7::shader::load("media/shaders/hdrexposure/hdrexposure.fs.glsl", GL_FRAGMENT_SHADER);
 
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
+        program = glCreateProgram();
 
         glAttachShader(program, vs);
         glAttachShader(program, fs);
 
         glLinkProgram(program);
+
+        glDeleteShader(fs);
+        glDeleteShader(vs);
+
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);

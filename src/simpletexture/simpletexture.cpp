@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright¢â 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,9 +22,11 @@
  */
 
 #include <sb7.h>
-#include <vmath.h>
+
+#include <shader.h>
 
 #include <string>
+
 static void print_shader_log(GLuint shader)
 {
     std::string str;
@@ -41,34 +43,6 @@ static void print_shader_log(GLuint shader)
     OutputDebugStringA(str.c_str());
 #endif
 }
-
-static const char * vs_source[] =
-{
-    "#version 420 core                                                              \n"
-    "                                                                               \n"
-    "void main(void)                                                                \n"
-    "{                                                                              \n"
-    "    const vec4 vertices[] = vec4[](vec4( 0.75, -0.75, 0.5, 1.0),               \n"
-    "                                   vec4(-0.75, -0.75, 0.5, 1.0),               \n"
-    "                                   vec4( 0.75,  0.75, 0.5, 1.0));              \n"
-    "                                                                               \n"
-    "    gl_Position = vertices[gl_VertexID];                                       \n"
-    "}                                                                              \n"
-};
-
-static const char * fs_source[] =
-{
-    "#version 430 core                                                              \n"
-    "                                                                               \n"
-    "uniform sampler2D s;                                                           \n"
-    "                                                                               \n"
-    "out vec4 color;                                                                \n"
-    "                                                                               \n"
-    "void main(void)                                                                \n"
-    "{                                                                              \n"
-    "    color = texture(s, gl_FragCoord.xy / textureSize(s, 0));                   \n"
-    "}                                                                              \n"
-};
 
 class simpletexture_app : public sb7::application
 {
@@ -115,15 +89,12 @@ public:
         delete [] data;
 
         program = glCreateProgram();
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, fs_source, NULL);
-        glCompileShader(fs);
+        
+        GLuint fs = sb7::shader::load("media/shaders/simpletexture/simpletexture.fs.glsl", GL_FRAGMENT_SHADER);
 
         print_shader_log(fs);
 
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, vs_source, NULL);
-        glCompileShader(vs);
+        GLuint vs = sb7::shader::load("media/shaders/simpletexture/simpletexture.vs.glsl", GL_VERTEX_SHADER);
 
         print_shader_log(vs);
 
@@ -131,6 +102,9 @@ public:
         glAttachShader(program, fs);
 
         glLinkProgram(program);
+
+        glDeleteShader(fs);
+        glDeleteShader(vs);
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
