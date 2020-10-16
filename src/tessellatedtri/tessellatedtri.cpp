@@ -65,6 +65,7 @@ class tessellatedtri_app : public sb7::application
 
     virtual void render(double currentTime)
     {
+        // Listing 3.7, 3.8
         static const GLfloat green[] = { 0.0f, 0.25f, 0.0f, 1.0f };
         glClearBufferfv(GL_COLOR, 0, green);
 

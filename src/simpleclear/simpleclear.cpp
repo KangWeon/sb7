@@ -36,9 +36,20 @@ class simpleclear_app : public sb7::application
 
     virtual void render(double currentTime)
     {
-        static const GLfloat red[] = { 1.0f, 0.0f, 0.0f, 1.0f };
-        glClearBufferfv(GL_COLOR, 0, red);
+        // Listing 2.1
+        //static const GLfloat red[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+        //glClearBufferfv(GL_COLOR, 0, red);
+
+        // Listing 2.2
+        const GLfloat color[] = {
+            sinf(currentTime) * 0.5f + 0.5f,
+            cosf(currentTime) * 0.5f + 0.5f,
+            sinf(currentTime) * cosf(currentTime) * 0.25f + 0.5f,
+            1.0f
+        };
+        glClearBufferfv(GL_COLOR, 0, color);
     }
+
 };
 
 DECLARE_MAIN(simpleclear_app)

@@ -149,7 +149,6 @@ public:
 
         if (info.flags.debug)
         {
-//            if (gl3wIsSupported(4, 3))
             if (GLAD_GL_VERSION_4_3)
             {
                 glDebugMessageCallback((GLDEBUGPROC)debug_callback, this);
@@ -191,7 +190,7 @@ public:
         info.minorVersion = 1;
 #else
         info.majorVersion = 4;
-        info.minorVersion = 3;
+        info.minorVersion = 6;
 #endif
         info.samples = 0;
         info.flags.all = 0;

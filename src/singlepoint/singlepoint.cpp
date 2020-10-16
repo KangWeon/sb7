@@ -56,6 +56,7 @@ class singlepoint_app : public sb7::application
 
     virtual void render(double currentTime)
     {
+        // Listing 2.7 
         static const GLfloat red[] = { 1.0f, 0.0f, 0.0f, 1.0f };
         glClearBufferfv(GL_COLOR, 0, red);
 

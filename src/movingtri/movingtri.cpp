@@ -22,8 +22,12 @@
  */
 
 #include <sb7.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <shader.h>
 
+using glm::vec4;
+using glm::value_ptr;
 
 
 class singlepoint_app : public sb7::application
@@ -58,16 +62,28 @@ class singlepoint_app : public sb7::application
 
     virtual void render(double currentTime)
     {
+        // Listing 3.2 ~ 3.6
         static const GLfloat green[] = { 0.0f, 0.25f, 0.0f, 1.0f };
         glClearBufferfv(GL_COLOR, 0, green);
 
         glUseProgram(program);
 
-        GLfloat attrib[] = { (float)sin(currentTime) * 0.5f,
-                             (float)cos(currentTime) * 0.6f,
-                             0.0f, 0.0f };
+        //GLfloat attrib[] = { (float)sin(currentTime) * 0.5f,
+                             //(float)cos(currentTime) * 0.6f,
+                             //0.0f, 0.0f };
+        vec4 attrib = vec4(
+            sinf(currentTime) * 0.5f,
+            cosf(currentTime) * 0.6f,
+            0.0f,
+            0.0f);
 
-        glVertexAttrib4fv(0, attrib);
+        vec4 color = vec4(sinf(currentTime) * 0.5f + 0.5f,
+            cosf(currentTime) * 0.5f + 0.5f,
+            0.5f, //tanf(currentTime) * 0.25f + 0.5f,
+            1.0f);
+
+        glVertexAttrib4fv(0, value_ptr(attrib));
+        glVertexAttrib4fv(1, value_ptr(color));
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }

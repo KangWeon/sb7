@@ -61,15 +61,18 @@ class tessllatedgstri_app : public sb7::application
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
 
     virtual void render(double currentTime)
     {
+        // Listing 3.9
         static const GLfloat green[] = { 0.0f, 0.25f, 0.0f, 1.0f };
         glClearBufferfv(GL_COLOR, 0, green);
 
         glUseProgram(program);
-
+     
         glPointSize(5.0f);
 
         glDrawArrays(GL_PATCHES, 0, 3);
