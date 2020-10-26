@@ -92,11 +92,11 @@ public:
         
         GLuint fs = sb7::shader::load("media/shaders/simpletexture/simpletexture.fs.glsl", GL_FRAGMENT_SHADER);
 
-        print_shader_log(fs);
+        //print_shader_log(fs);
 
         GLuint vs = sb7::shader::load("media/shaders/simpletexture/simpletexture.vs.glsl", GL_VERTEX_SHADER);
 
-        print_shader_log(vs);
+        //print_shader_log(vs);
 
         glAttachShader(program, vs);
         glAttachShader(program, fs);

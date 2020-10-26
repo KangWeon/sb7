@@ -94,7 +94,7 @@ void text_overlay::init(int width, int height, const char* font)
     // glCreateTextures(GL_TEXTURE_2D, 1, &text_buffer);
     glGenTextures(1, &text_buffer);
     glBindTexture(GL_TEXTURE_2D, text_buffer);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_R8UI, width, height);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8UI, width, height);
 
     font_texture = sb7::ktx::file::load(font ?  font : "media/textures/cp437_9x16.ktx");
 

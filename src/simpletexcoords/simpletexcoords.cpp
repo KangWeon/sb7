@@ -96,6 +96,7 @@ protected:
         glBindTexture(GL_TEXTURE_2D, tex_object[0]);
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, 16, 16);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 16, 16, GL_RGBA, GL_UNSIGNED_BYTE, tex_data);
+        
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 

@@ -46,7 +46,7 @@ using glm::radians;
 using glm::value_ptr;
 
 #define MANY_OBJECTS 
-#undef MANY_OBJECTS 
+//#undef MANY_OBJECTS 
 
 class blinnphong_app : public sb7::application
 {

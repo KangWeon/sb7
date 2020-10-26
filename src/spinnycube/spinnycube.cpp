@@ -144,18 +144,21 @@ class singlepoint_app : public sb7::application
 
 
         glEnable(GL_CULL_FACE);
-        glFrontFace(GL_CCW);
+        glFrontFace(GL_CW);
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
 
-       
+        onResize(info.windowWidth, info.windowHeight);
     }
 
     virtual void render(double currentTime)
     {
-        glViewport(0, 0, info.windowWidth, info.windowHeight);
-
+        vec3 view_position = vec3(0.0f, 0.0f, -10.0f); // Camera Position
+        mat4 view_matrix = lookAt(view_position,    // Camera Space = Camera Coordination System
+            vec3(0.0f, 0.0f, 0.0f),
+            vec3(0.0f, 1.0f, 0.0f));
+        
         static const GLfloat green[] = { 0.0f, 0.25f, 0.0f, 1.0f };
         static const GLfloat one = 1.0f;
         
@@ -163,21 +166,19 @@ class singlepoint_app : public sb7::application
         glClearBufferfv(GL_DEPTH, 0, &one);
 
         glUseProgram(program);
-
         glUniformMatrix4fv(proj_location, 1, GL_FALSE, value_ptr(proj_matrix));
-
+       
 #ifdef MANY_CUBES
-        int i;
-        for (i = 0; i < 24; i++)
+        for (int i = 0; i < 32; i++)
         {
             float f = (float)i + (float)currentTime * 0.3f;
-            mat4 mv_matrix = translate(vec3(0.0f, 0.0f, -6.0f)) *
+            mat4 mv_matrix = translate(vec3(0.0f, 0.0f, -4.0f)) *
                                     rotate(radians((float)currentTime * 45.0f), vec3(0.0f, 1.0f, 0.0f)) *
                                     rotate(radians((float)currentTime * 21.0f), vec3(1.0f, 0.0f, 0.0f)) *
                                     translate(vec3(sinf(2.1f * f) * 2.0f,
                                                      cosf(1.7f * f) * 2.0f,
                                                      sinf(1.3f * f) * cosf(1.5f * f) * 2.0f));
-            glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
+            glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(view_matrix * mv_matrix));
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 #else
@@ -188,7 +189,7 @@ class singlepoint_app : public sb7::application
                                                     sinf(1.3f * f) * cosf(1.5f * f) * 2.0f)) *
                                 rotate(radians((float)currentTime * 45.0f), vec3(0.0f, 1.0f, 0.0f)) *
                                 rotate(radians((float)currentTime * 81.0f), vec3(1.0f, 0.0f, 0.0f));
-        glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(mv_matrix));
+        glUniformMatrix4fv(mv_location, 1, GL_FALSE, value_ptr(view_matrix * mv_matrix));
         glDrawArrays(GL_TRIANGLES, 0, 36);
 #endif
     }
@@ -200,16 +201,15 @@ class singlepoint_app : public sb7::application
         glDeleteBuffers(1, &buffer);
     }
 
-    void onResize(int w, int h)
+    virtual void onResize(int w, int h)
     {
-        sb7::application::onResize(w, h);
-
-
         glViewport(0, 0, w, h);
-
         aspect = (float)w / (float)h;
+#ifdef MANY_CUBES
         proj_matrix = perspective(radians(50.0f), aspect, 0.1f, 1000.0f);
-
+#else
+        proj_matrix = perspective(radians(25.0f), aspect, 0.1f, 1000.0f);
+#endif
     }
 
 private:
