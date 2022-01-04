@@ -24,14 +24,10 @@
  */
 
 #include <sb7.h>
+#include <GLFW/glfw3.h>
+#include <string.h>
 
 sb7::application * sb7::application::app = 0;
-
-//#include <GL/glext.h>
-//#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include <string.h>
 
 GLADloadproc sb6GetProcAddress(const char * funcname)
 {

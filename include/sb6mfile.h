@@ -1,5 +1,5 @@
 /*
- * Copyright ?2012-2015 Graham Sellers
+ * Copyright © 2012-2015 Graham Sellers
  *
  * This code is part of the OpenGL SuperBible, 7th Edition.
  *
@@ -37,11 +37,11 @@
 typedef enum SB6M_CHUNK_TYPE_t
 {
     SB6M_CHUNK_TYPE_INDEX_DATA                  = SB6M_FOURCC('I','N','D','X'),
-    SB6M_CHUNK_TYPE_VERTEX_DATA                = SB6M_FOURCC('V','R','T','X'),
-    SB6M_CHUNK_TYPE_VERTEX_ATTRIBS           = SB6M_FOURCC('A','T','R','B'),
-    SB6M_CHUNK_TYPE_SUB_OBJECT_LIST         = SB6M_FOURCC('O','L','S','T'),
-    SB6M_CHUNK_TYPE_COMMENT                       = SB6M_FOURCC('C','M','N','T'),
-    SB6M_CHUNK_TYPE_DATA                                = SB6M_FOURCC('D','A','T','A')
+    SB6M_CHUNK_TYPE_VERTEX_DATA                 = SB6M_FOURCC('V','R','T','X'),
+    SB6M_CHUNK_TYPE_VERTEX_ATTRIBS              = SB6M_FOURCC('A','T','R','B'),
+    SB6M_CHUNK_TYPE_SUB_OBJECT_LIST             = SB6M_FOURCC('O','L','S','T'),
+    SB6M_CHUNK_TYPE_COMMENT                     = SB6M_FOURCC('C','M','N','T'),
+    SB6M_CHUNK_TYPE_DATA                        = SB6M_FOURCC('D','A','T','A')
 } SB6M_CHUNK_TYPE;
 
 typedef struct SB6M_HEADER_t

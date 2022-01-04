@@ -1,5 +1,5 @@
 /*
- * Copyright � 2012-2013 Graham Sellers
+ * Copyright © 2012-2015 Graham Sellers
  *
  * This code is part of the OpenGL SuperBible, 6th Edition.
  *
@@ -38,7 +38,6 @@
 #endif
 
 #include <glad/glad.h>
-//#include "GL/gl3w.h"
 
 #define GLFW_NO_GLU 1
 #define GLFW_INCLUDE_GLCOREARB 1
